@@ -1,64 +1,121 @@
-use clap::{ArgEnum, Parser};
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+
 use std::ffi::OsString;
+use std::{fs, io, path};
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about)]
-struct Args {
-    /// ignore nonexistent files and arguments, never prompt
-    #[clap(short = 'f', long = "force")]
-    force: bool,
+use clap::ArgMatches;
+use thiserror::Error;
 
-    /// prompt before every removal
-    #[clap(short = 'i')]
-    interactive_weak: bool,
+use arg::{rm_options, InteractiveMode, RmOptions};
 
-    /// prompt once before removing more than three files, or when removing recursively; less
-    /// intrusive than -i, while still giving protection against most mistakes
-    /// prompt according to WHEN: never, once (-I), or always (-i); without WHEN, prompt always
-    #[clap(
-        short = 'I',
-        long = "interactive[=WHEN]",
-        arg_enum,
-        value_parser,
-        default_value = "never"
-    )]
-    interactive: InteractiveMode,
+mod arg;
 
-    /// when removing a hierarchy recursively, skip any directory that is on a file system different
-    /// from that of the corresponding command line argument
-    #[clap(long = "one-file-system")]
-    one_file_system: bool,
-
-    /// do not remove '/' (default); with 'all', reject any command line argument on a separate
-    /// device from its parent
-    #[clap(long = "preserve-root[=all]")]
-    preserve_root: bool,
-
-    /// remove directories and their contents recursively, alias: -R
-    #[clap(short = 'r', short_alias('R'), long = "recursive")]
-    recursive: bool,
-
-    /// remove empty directories
-    #[clap(short = 'd', long = "dir")]
-    dir: bool,
-
-    /// explain what is being done
-    #[clap(short = 'v', long = "verbose")]
-    verbose: bool,
-
-    #[clap()]
-    file: Vec<OsString>,
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("Operation not permitted")]
+    Permission,
+    #[error("Is a directory")]
+    Directory,
+    #[error("Directory not empty")]
+    DirectoryNotEmpty,
+    #[error("No such file or directory")]
+    NoSuchFile,
+    #[error("oh")]
+    Unknown,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, ArgEnum)]
-enum InteractiveMode {
-    Never,
-    Once,
-    Always,
+pub enum RmStatus {
+    Accept,
+    Declined,
+    Failed(Error),
 }
 
-fn main() {
-    let app = Args::parse();
+pub type Result<T> = std::result::Result<T, Error>;
 
-    dbg!(app);
+fn main() -> Result<()> {
+    let args = rm_options().get_matches();
+    let opt = RmOptions::from(&args);
+    let mode = elect_interact_level(&opt, &args);
+
+    dbg!(mode);
+
+    // if opt == RmOptions::default() {
+    //     println!("rm: missing operand");
+    //     return Ok(());
+    // }
+    //
+    // match mode {
+    //     InteractiveMode::Never => {
+    //         // enable jwalk
+    //         todo!()
+    //     }
+    //
+    //     InteractiveMode::Always | InteractiveMode::Once => {
+    //         // sequential
+    //         for path in &opt.file {
+    //             let metadata = verify_metadata(path)?;
+    //         }
+    //     }
+    // }
+
+    todo!()
 }
+
+/// Get the last occurence of a flag and return its index
+fn last_flag_occurence(indices_of: Option<clap::Indices>) -> usize {
+    *indices_of
+        .map(std::iter::Iterator::collect::<Vec<usize>>)
+        .unwrap_or_default()
+        .last()
+        .unwrap_or(&0)
+}
+
+#[must_use]
+pub fn elect_interact_level(opt: &RmOptions, args: &ArgMatches) -> InteractiveMode {
+    let flag_always = last_flag_occurence(args.indices_of("interactive_always"));
+    let flag_once = last_flag_occurence(args.indices_of("interactive_once"));
+    let flag_mode = last_flag_occurence(args.indices_of("WHEN"));
+
+    if flag_always > flag_once && flag_always > flag_mode {
+        InteractiveMode::Always
+    } else if flag_once > flag_always && flag_once > flag_mode {
+        InteractiveMode::Once
+    } else if flag_mode > flag_always && flag_mode > flag_once {
+        opt.interactive
+    } else {
+        InteractiveMode::Never
+    }
+}
+
+// pub fn verify_metadata(path: &OsString) -> Result<fs::Metadata> {
+//     fs::metadata(path).map_err(|err| {
+//         println!("{:?}", err);
+//         Error::NoSuchFile
+//     })
+// }
+//
+
+// pub fn prompt(opt: &RmOptions, is_dir: bool, path: &OsString) -> RmStatus {
+//     let mode = opt.interactive;
+//
+//     if matches!(mode, InteractiveMode::Never) {
+//         return RmStatus::Accept;
+//     }
+//     let write_protected = metadata.permissions().readonly();
+//
+//     if !write_protected && is_dir && !opt.dir {
+//         return RmStatus::Failed(Error::Directory);
+//     }
+//
+//     let is_empty_dir = path::PathBuf::from(path)
+//         .read_dir()
+//         .unwrap()
+//         .next()
+//         .is_none();
+//
+//     if !is_empty_dir && opt.dir {
+//         return RmStatus::Failed(Error::DirectoryNotEmpty);
+//     }
+//
+//     todo!()
+// }
