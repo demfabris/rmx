@@ -10,7 +10,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libc = "0.2.126"
 clap = { version = "3.2.12", features = ["cargo"] }
 dialoguer = "0.10.1"
 thiserror = "1.0.31"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.126"

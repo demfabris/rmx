@@ -1,28 +1,16 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 
+use dialoguer::{theme, Confirm};
 use std::ffi::OsString;
 use std::{fs, io, path};
 
 use clap::ArgMatches;
-use thiserror::Error;
 
 use arg::{rm_options, InteractiveMode, RmOptions};
+use error::Error;
 
 mod arg;
-
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("Operation not permitted")]
-    Permission,
-    #[error("Is a directory")]
-    Directory,
-    #[error("Directory not empty")]
-    DirectoryNotEmpty,
-    #[error("No such file or directory")]
-    NoSuchFile,
-    #[error("oh")]
-    Unknown,
-}
+mod error;
 
 pub enum RmStatus {
     Accept,
@@ -32,68 +20,106 @@ pub enum RmStatus {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-fn main() -> Result<()> {
+fn main() {
+    if let Err(err) = run() {
+        match err {
+            Error::UnknownEntity(ref file) | Error::NoSuchFile(ref file) => {
+                println!("rm: cannot remove '{}': {}", file, err);
+            }
+            _ => (),
+        }
+    }
+}
+
+fn run() -> Result<()> {
     let args = rm_options().get_matches();
     let opt = RmOptions::from(&args);
     let mode = elect_interact_level(&opt, &args);
 
-    dbg!(mode);
+    if opt == RmOptions::default() && !opt.force {
+        println!("rm: missing operand");
+        println!("Try 'rmd --help' for more information.");
+        return Ok(());
+    }
 
-    // if opt == RmOptions::default() {
-    //     println!("rm: missing operand");
-    //     return Ok(());
-    // }
-    //
-    // match mode {
-    //     InteractiveMode::Never => {
-    //         // enable jwalk
-    //         todo!()
-    //     }
-    //
-    //     InteractiveMode::Always | InteractiveMode::Once => {
-    //         // sequential
-    //         for path in &opt.file {
-    //             let metadata = verify_metadata(path)?;
-    //         }
-    //     }
-    // }
+    for path in &opt.file {
+        let ent = fs_entity(path)?;
+        match ent {
+            FsEntity::File { metadata, name } => match prompt_file(&metadata, &name, mode) {
+                RmStatus::Accept => {
+                    println!("execute");
+                }
+                RmStatus::Declined => (),
+                RmStatus::Failed(err) => {
+                    println!("{:?}", err);
+                }
+            },
+            FsEntity::Dir { metadata, name } => {
+                todo!()
+            }
+            FsEntity::Symlink { metadata, name } => {
+                todo!()
+            }
+        }
+    }
 
     todo!()
 }
 
-/// Get the last occurence of a flag and return its index
-fn last_flag_occurence(indices_of: Option<clap::Indices>) -> usize {
-    *indices_of
-        .map(std::iter::Iterator::collect::<Vec<usize>>)
-        .unwrap_or_default()
-        .last()
-        .unwrap_or(&0)
+#[cfg(unix)]
+#[must_use]
+pub fn is_write_protected(metadata: &fs::Metadata) -> bool {
+    use std::os::unix::fs::MetadataExt;
+
+    let file_uid = metadata.uid();
+    let proc_uid = unsafe { libc::getuid() };
+
+    metadata.permissions().readonly() || file_uid != proc_uid
+}
+
+#[cfg(windows)]
+#[must_use]
+pub fn is_write_protected(metadata: &fs::Metadata) -> bool {
+    metadata.permissions().readonly()
 }
 
 #[must_use]
-pub fn elect_interact_level(opt: &RmOptions, args: &ArgMatches) -> InteractiveMode {
-    let flag_always = last_flag_occurence(args.indices_of("interactive_always"));
-    let flag_once = last_flag_occurence(args.indices_of("interactive_once"));
-    let flag_mode = last_flag_occurence(args.indices_of("WHEN"));
+pub fn prompt_file(metadata: &fs::Metadata, name: &str, mode: InteractiveMode) -> RmStatus {
+    match mode {
+        InteractiveMode::Always => {
+            // need to fix this variable
+            let write_protected = is_write_protected(metadata);
+            let empty = metadata.len() == 0;
 
-    if flag_always > flag_once && flag_always > flag_mode {
-        InteractiveMode::Always
-    } else if flag_once > flag_always && flag_once > flag_mode {
-        InteractiveMode::Once
-    } else if flag_mode > flag_always && flag_mode > flag_once {
-        opt.interactive
-    } else {
-        InteractiveMode::Never
+            let message = format!(
+                "rm: remove{write_protected}regular{empty}file '{name}'?",
+                write_protected = if write_protected {
+                    " write protected "
+                } else {
+                    " "
+                },
+                empty = if empty { " empty " } else { " " },
+                name = name
+            );
+
+            let maybe_interact = Confirm::with_theme(&theme::ColorfulTheme::default())
+                .with_prompt(message)
+                .default(true)
+                .show_default(true)
+                .interact();
+
+            if let Ok(yes) = maybe_interact {
+                if yes {
+                    return RmStatus::Accept;
+                }
+                return RmStatus::Declined;
+            }
+
+            RmStatus::Failed(maybe_interact.unwrap_err().into())
+        }
+        InteractiveMode::Once | InteractiveMode::Never => RmStatus::Accept,
     }
 }
-
-// pub fn verify_metadata(path: &OsString) -> Result<fs::Metadata> {
-//     fs::metadata(path).map_err(|err| {
-//         println!("{:?}", err);
-//         Error::NoSuchFile
-//     })
-// }
-//
 
 // pub fn prompt(opt: &RmOptions, is_dir: bool, path: &OsString) -> RmStatus {
 //     let mode = opt.interactive;
@@ -119,3 +145,74 @@ pub fn elect_interact_level(opt: &RmOptions, args: &ArgMatches) -> InteractiveMo
 //
 //     todo!()
 // }
+
+/// Get the last occurence of a flag and return its index
+#[inline]
+fn last_flag_occurence(indices_of: Option<clap::Indices>, is_present: bool) -> usize {
+    if is_present {
+        *indices_of
+            .map(std::iter::Iterator::collect::<Vec<usize>>)
+            .unwrap_or_default()
+            .last()
+            .unwrap_or(&0)
+    } else {
+        0
+    }
+}
+
+#[must_use]
+#[inline]
+pub fn elect_interact_level(opt: &RmOptions, args: &ArgMatches) -> InteractiveMode {
+    let flag_always = last_flag_occurence(
+        args.indices_of("interactive_always"),
+        opt.interactive_always,
+    );
+    let flag_once = last_flag_occurence(args.indices_of("interactive_once"), opt.interactive_once);
+    let flag_mode = last_flag_occurence(args.indices_of("WHEN"), true);
+
+    if flag_always > flag_once && flag_always > flag_mode {
+        InteractiveMode::Always
+    } else if flag_once > flag_always && flag_once > flag_mode {
+        InteractiveMode::Once
+    } else if flag_mode > flag_always && flag_mode > flag_once {
+        opt.interactive
+    } else {
+        InteractiveMode::Never
+    }
+}
+
+#[derive(Debug)]
+pub enum FsEntity {
+    Symlink {
+        metadata: fs::Metadata,
+        name: String,
+    },
+    Dir {
+        metadata: fs::Metadata,
+        name: String,
+    },
+    File {
+        metadata: fs::Metadata,
+        name: String,
+    },
+}
+
+/// # Errors
+pub fn fs_entity(path: &OsString) -> Result<FsEntity> {
+    let name = path::PathBuf::from(path)
+        .file_name()
+        .map(|t| t.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let metadata = fs::metadata(path).map_err(|_| Error::NoSuchFile(name.clone()))?;
+
+    let entity = match metadata {
+        m if m.is_dir() => FsEntity::Dir { metadata: m, name },
+        m if m.is_file() => FsEntity::File { metadata: m, name },
+        m if m.is_symlink() => FsEntity::Symlink { metadata: m, name },
+        _ => {
+            return Err(Error::UnknownEntity(name));
+        }
+    };
+
+    Ok(entity)
+}

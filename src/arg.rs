@@ -15,20 +15,17 @@ pub fn rm_options() -> Command<'static> {
             Arg::new("force")
                 .help("ignore nonexistent files and arguments, never prompt")
                 .short('f')
-                .action(ArgAction::Count)
         )
         .arg(
             Arg::new("interactive_always")
                 .help("prompt before every removal")
                 .short('i')
-                .action(ArgAction::Count)
         )
         .arg(
             Arg::new("interactive_once")
                 .help("prompt once before removing more than three files, or when removing recursively; less
 intrusive than -i, while still giving protection against most mistakes")
                 .short('I')
-                .action(ArgAction::Count)
         )
         .arg(
             Arg::new("interactive")
@@ -43,7 +40,6 @@ intrusive than -i, while still giving protection against most mistakes")
                 .help("when removing a hierarchy recursively, skip any directory that is on a file system different
 from that of the corresponding command line argument")
                 .long("one-file-system")
-                .action(ArgAction::Count)
         )
         .arg(
             Arg::new("preserve_root")
@@ -60,21 +56,18 @@ device from its parent")
                 .long("recursive")
                 .short('r')
                 .short_alias('R')
-                .action(ArgAction::Count)
         )
         .arg(
             Arg::new("dir")
                 .help("remove empty directories")
                 .long("dir")
                 .short('d')
-                .action(ArgAction::Count)
         )
         .arg(
             Arg::new("verbose")
                 .help("explain what is being done")
                 .long("verbose")
                 .short('v')
-                .action(ArgAction::Count)
         )
         .arg(
             Arg::new("FILE")
@@ -85,7 +78,7 @@ device from its parent")
         )
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct RmOptions {
     pub force: bool,
@@ -100,11 +93,17 @@ pub struct RmOptions {
     pub file: Vec<OsString>,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum InteractiveMode {
     Never,
     Once,
     Always,
+}
+
+impl Default for InteractiveMode {
+    fn default() -> Self {
+        Self::Never
+    }
 }
 
 impl From<&ArgMatches> for RmOptions {
