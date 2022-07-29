@@ -15,6 +15,7 @@ mod error;
 pub enum RmStatus {
     Accept,
     Declined,
+    Descend(OsString),
     Failed(Error),
 }
 
@@ -23,7 +24,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 fn main() {
     if let Err(err) = run() {
         match err {
-            Error::UnknownEntity(ref file) | Error::NoSuchFile(ref file) => {
+            Error::UnknownEntity(ref file)
+            | Error::NoSuchFile(ref file)
+            | Error::IsDirectory(ref file)
+            | Error::DirectoryNotEmpty(ref file) => {
                 println!("rm: cannot remove '{}': {}", file, err);
             }
             _ => (),
@@ -38,10 +42,11 @@ fn run() -> Result<()> {
 
     if opt == RmOptions::default() && !opt.force {
         println!("rm: missing operand");
-        println!("Try 'rmd --help' for more information.");
+        println!("Try 'rm --help' for more information.");
         return Ok(());
     }
 
+    // let mut dir_st = vec![String::new(); 10];
     for path in &opt.file {
         let ent = fs_entity(path)?;
         match ent {
@@ -49,14 +54,27 @@ fn run() -> Result<()> {
                 RmStatus::Accept => {
                     println!("execute");
                 }
-                RmStatus::Declined => (),
+                RmStatus::Descend(_) | RmStatus::Declined => continue,
                 RmStatus::Failed(err) => {
-                    println!("{:?}", err);
+                    return Err(err);
                 }
             },
+
             FsEntity::Dir { metadata, name } => {
-                todo!()
+                match prompt_dir(&opt, path, &metadata, &name, mode) {
+                    RmStatus::Accept => {
+                        println!("execute");
+                    }
+                    RmStatus::Descend(folder) => {
+                        println!("descend");
+                    }
+                    RmStatus::Declined => continue,
+                    RmStatus::Failed(err) => {
+                        return Err(err);
+                    }
+                }
             }
+
             FsEntity::Symlink { metadata, name } => {
                 todo!()
             }
@@ -64,6 +82,127 @@ fn run() -> Result<()> {
     }
 
     todo!()
+}
+
+#[must_use]
+/// # Panics
+pub fn prompt_dir(
+    opt: &RmOptions,
+    path: &OsString,
+    metadata: &fs::Metadata,
+    name: &str,
+    mode: InteractiveMode,
+) -> RmStatus {
+    let is_empty_dir = path::PathBuf::from(path)
+        .read_dir()
+        .unwrap()
+        .next()
+        .is_none();
+
+    if !opt.force {
+        if !opt.dir {
+            return RmStatus::Failed(Error::IsDirectory(name.to_owned()));
+        }
+
+        if opt.dir && !is_empty_dir {
+            return RmStatus::Failed(Error::DirectoryNotEmpty(name.to_owned()));
+        }
+    }
+
+    let write_protected = is_write_protected(metadata);
+    let message = format!(
+        "rm: {descend_remove}{write_protected}directory '{name}'?",
+        descend_remove = if opt.recursive {
+            "descend into"
+        } else {
+            "remove"
+        },
+        write_protected = if write_protected {
+            " write-protected "
+        } else {
+            " "
+        },
+        name = name
+    );
+
+    let maybe_interact;
+    match mode {
+        InteractiveMode::Always => {
+            if is_empty_dir && opt.dir {
+                maybe_interact = interact_with_message(message);
+            }
+            return RmStatus::Accept;
+        }
+        InteractiveMode::Once => {
+            return RmStatus::Accept;
+        }
+        InteractiveMode::Never => {
+            if write_protected {
+                maybe_interact = interact_with_message(message);
+            } else {
+                return RmStatus::Accept;
+            }
+        }
+    }
+
+    if let Ok(yes) = maybe_interact {
+        if yes {
+            return RmStatus::Accept;
+        }
+        return RmStatus::Declined;
+    }
+
+    RmStatus::Failed(maybe_interact.unwrap_err())
+}
+
+#[must_use]
+pub fn prompt_file(metadata: &fs::Metadata, name: &str, mode: InteractiveMode) -> RmStatus {
+    let write_protected = is_write_protected(metadata);
+    let empty = metadata.len() == 0;
+
+    let message = format!(
+        "rm: remove{write_protected}regular{empty}file '{name}'?",
+        write_protected = if write_protected {
+            " write-protected "
+        } else {
+            " "
+        },
+        empty = if empty { " empty " } else { " " },
+        name = name
+    );
+
+    let maybe_interact;
+    match mode {
+        InteractiveMode::Always => {
+            maybe_interact = interact_with_message(message);
+        }
+        InteractiveMode::Once | InteractiveMode::Never => {
+            if write_protected {
+                maybe_interact = interact_with_message(message);
+            } else {
+                return RmStatus::Accept;
+            }
+        }
+    }
+
+    if let Ok(yes) = maybe_interact {
+        if yes {
+            return RmStatus::Accept;
+        }
+        return RmStatus::Declined;
+    }
+
+    RmStatus::Failed(maybe_interact.unwrap_err())
+}
+
+/// # Errors
+pub fn interact_with_message(message: String) -> Result<bool> {
+    Confirm::with_theme(&theme::ColorfulTheme::default())
+        .with_prompt(message)
+        .default(true)
+        .show_default(true)
+        .interact()
+        .map_err(std::convert::Into::into)
 }
 
 #[cfg(unix)]
@@ -82,69 +221,6 @@ pub fn is_write_protected(metadata: &fs::Metadata) -> bool {
 pub fn is_write_protected(metadata: &fs::Metadata) -> bool {
     metadata.permissions().readonly()
 }
-
-#[must_use]
-pub fn prompt_file(metadata: &fs::Metadata, name: &str, mode: InteractiveMode) -> RmStatus {
-    match mode {
-        InteractiveMode::Always => {
-            // need to fix this variable
-            let write_protected = is_write_protected(metadata);
-            let empty = metadata.len() == 0;
-
-            let message = format!(
-                "rm: remove{write_protected}regular{empty}file '{name}'?",
-                write_protected = if write_protected {
-                    " write protected "
-                } else {
-                    " "
-                },
-                empty = if empty { " empty " } else { " " },
-                name = name
-            );
-
-            let maybe_interact = Confirm::with_theme(&theme::ColorfulTheme::default())
-                .with_prompt(message)
-                .default(true)
-                .show_default(true)
-                .interact();
-
-            if let Ok(yes) = maybe_interact {
-                if yes {
-                    return RmStatus::Accept;
-                }
-                return RmStatus::Declined;
-            }
-
-            RmStatus::Failed(maybe_interact.unwrap_err().into())
-        }
-        InteractiveMode::Once | InteractiveMode::Never => RmStatus::Accept,
-    }
-}
-
-// pub fn prompt(opt: &RmOptions, is_dir: bool, path: &OsString) -> RmStatus {
-//     let mode = opt.interactive;
-//
-//     if matches!(mode, InteractiveMode::Never) {
-//         return RmStatus::Accept;
-//     }
-//     let write_protected = metadata.permissions().readonly();
-//
-//     if !write_protected && is_dir && !opt.dir {
-//         return RmStatus::Failed(Error::Directory);
-//     }
-//
-//     let is_empty_dir = path::PathBuf::from(path)
-//         .read_dir()
-//         .unwrap()
-//         .next()
-//         .is_none();
-//
-//     if !is_empty_dir && opt.dir {
-//         return RmStatus::Failed(Error::DirectoryNotEmpty);
-//     }
-//
-//     todo!()
-// }
 
 /// Get the last occurence of a flag and return its index
 #[inline]

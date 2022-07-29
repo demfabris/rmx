@@ -5,9 +5,9 @@ pub enum Error {
     #[error("Operation not permitted")]
     Permission,
     #[error("Is a directory")]
-    Directory,
+    IsDirectory(String),
     #[error("Directory not empty")]
-    DirectoryNotEmpty,
+    DirectoryNotEmpty(String),
     #[error("No such file or directory")]
     NoSuchFile(String),
     #[error("Unknown file system entity")]
