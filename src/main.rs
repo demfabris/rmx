@@ -2,7 +2,7 @@
 
 use dialoguer::{theme, Confirm};
 use std::ffi::OsString;
-use std::{fs, io, path};
+use std::{fs, path};
 
 use clap::ArgMatches;
 
@@ -66,7 +66,7 @@ fn run() -> Result<()> {
                         println!("execute");
                     }
                     RmStatus::Descend(folder) => {
-                        println!("descend");
+                        println!("descend {:?}", folder);
                     }
                     RmStatus::Declined => continue,
                     RmStatus::Failed(err) => {
@@ -76,6 +76,7 @@ fn run() -> Result<()> {
             }
 
             FsEntity::Symlink { metadata, name } => {
+                println!("{:?} {:?}", metadata, name);
                 todo!()
             }
         }
@@ -125,24 +126,32 @@ pub fn prompt_dir(
         name = name
     );
 
-    let maybe_interact;
-    match mode {
+    let mut force_accept = false;
+    let maybe_interact = match mode {
         InteractiveMode::Always => {
             if is_empty_dir && opt.dir {
-                maybe_interact = interact_with_message(message);
+                interact_with_message(message)
+            } else {
+                force_accept = true;
+                Ok(false)
             }
-            return RmStatus::Accept;
         }
         InteractiveMode::Once => {
-            return RmStatus::Accept;
+            force_accept = true;
+            Ok(false)
         }
         InteractiveMode::Never => {
             if write_protected {
-                maybe_interact = interact_with_message(message);
+                interact_with_message(message)
             } else {
-                return RmStatus::Accept;
+                force_accept = true;
+                Ok(false)
             }
         }
+    };
+
+    if force_accept {
+        return RmStatus::Accept;
     }
 
     if let Ok(yes) = maybe_interact {
@@ -196,6 +205,9 @@ pub fn prompt_file(metadata: &fs::Metadata, name: &str, mode: InteractiveMode) -
 }
 
 /// # Errors
+///
+/// Fails with I/O error if can't write to stdout
+#[cfg(not(feature = "no-interactive"))]
 pub fn interact_with_message(message: String) -> Result<bool> {
     Confirm::with_theme(&theme::ColorfulTheme::default())
         .with_prompt(message)
@@ -203,6 +215,13 @@ pub fn interact_with_message(message: String) -> Result<bool> {
         .show_default(true)
         .interact()
         .map_err(std::convert::Into::into)
+}
+
+#[cfg(feature = "no-interactive")]
+#[allow(clippy::needless_pass_by_value)]
+pub fn interact_with_message(message: String) -> Result<bool> {
+    println!("{}", message);
+    Ok(true)
 }
 
 #[cfg(unix)]
@@ -291,4 +310,83 @@ pub fn fs_entity(path: &OsString) -> Result<FsEntity> {
     };
 
     Ok(entity)
+}
+
+#[cfg(test)]
+mod tests {
+    use assert_cmd::prelude::*;
+    use assert_fs::prelude::*;
+    use assert_fs::TempDir;
+    use escargot::CargoBuild;
+    use predicates as pd;
+
+    use super::*;
+
+    /// Build `rmd` bin that accepts every command line interaction
+    fn no_interactive_bin() -> std::process::Command {
+        CargoBuild::new()
+            .bin("rmd")
+            .features("no-interactive")
+            .run()
+            .unwrap()
+            .command()
+    }
+
+    #[test]
+    fn test_cli_missing_operand_error() {
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.assert();
+        assert.stdout(pd::str::contains("missing operand"));
+
+        // TODO: Unimplemented flags
+        // let assert = cmd
+        //     .args(&["-d", "-i", "-v", "--one-file-system", "--preserve-root=/"])
+        //     .assert();
+        // assert.stdout(pd::str::contains("missing operand"));
+    }
+
+    #[test]
+    fn test_cli_is_a_directory_error() {
+        let dir1 = TempDir::new().unwrap();
+        let mut cmd = no_interactive_bin();
+
+        let assert = cmd.arg(dir1.path()).assert();
+        assert.stdout(pd::str::contains("Is a directory"));
+
+        let assert = cmd
+            .arg(dir1.path())
+            .args(&["-i", "-I", "-v", "--one-file-system", "--preserve-root=/"])
+            .assert();
+        assert.stdout(pd::str::contains("Is a directory"));
+    }
+
+    #[test]
+    fn test_cli_directory_not_empty_error() {
+        let dir1 = TempDir::new().unwrap();
+        dir1.child("file1").touch().unwrap();
+        let mut cmd = no_interactive_bin();
+
+        let assert = cmd.arg(dir1.path()).arg("-d").assert();
+        assert.stdout(pd::str::contains("Directory not empty"));
+    }
+
+    #[test]
+    fn test_cli_ask_remove_directory() {
+        let dir1 = TempDir::new().unwrap();
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg("-d").arg("-i").arg(dir1.path()).assert();
+        assert.stdout(pd::str::contains("remove directory"));
+    }
+
+    #[test]
+    fn test_cli_ask_remove_write_protected_directory() {
+        let dir1 = TempDir::new().unwrap();
+        let mut perms = fs::metadata(dir1.path()).unwrap().permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(dir1.path(), perms).unwrap();
+
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg("-d").arg("-i").arg(dir1.path()).assert();
+        assert.stdout(pd::str::contains("remove write-protected directory"));
+    }
 }

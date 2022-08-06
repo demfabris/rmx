@@ -14,5 +14,14 @@ clap = { version = "3.2.12", features = ["cargo"] }
 dialoguer = "0.10.1"
 thiserror = "1.0.31"
 
+[features]
+no-interactive = []
+
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.126"
+
+[dev-dependencies]
+assert_fs = "1.0.7"
+assert_cmd = "2.0.4"
+predicates = "2.1.1"
+escargot = "0.5.7"
