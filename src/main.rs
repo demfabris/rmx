@@ -100,7 +100,7 @@ pub fn prompt_dir(
         .next()
         .is_none();
 
-    if !opt.force {
+    if !opt.force && !opt.recursive {
         if !opt.dir {
             return RmStatus::Failed(Error::IsDirectory(name.to_owned()));
         }
@@ -113,7 +113,7 @@ pub fn prompt_dir(
     let write_protected = is_write_protected(metadata);
     let message = format!(
         "rm: {descend_remove}{write_protected}directory '{name}'?",
-        descend_remove = if opt.recursive {
+        descend_remove = if opt.recursive && !is_empty_dir {
             "descend into"
         } else {
             "remove"
@@ -313,6 +313,8 @@ pub fn fs_entity(path: &OsString) -> Result<FsEntity> {
 }
 
 #[cfg(test)]
+/// Tests naming structure
+/// test cli + flags + operation + adjs.
 mod tests {
     use assert_cmd::prelude::*;
     use assert_fs::prelude::*;
@@ -333,35 +335,46 @@ mod tests {
     }
 
     #[test]
+    /// `rmd `
     fn test_cli_missing_operand_error() {
         let mut cmd = no_interactive_bin();
         let assert = cmd.assert();
         assert.stdout(pd::str::contains("missing operand"));
-
-        // TODO: Unimplemented flags
-        // let assert = cmd
-        //     .args(&["-d", "-i", "-v", "--one-file-system", "--preserve-root=/"])
-        //     .assert();
-        // assert.stdout(pd::str::contains("missing operand"));
     }
 
     #[test]
-    fn test_cli_is_a_directory_error() {
+    /// `rmd empty_dir`
+    fn test_cli_remove_empty_directory() {
         let dir1 = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
 
         let assert = cmd.arg(dir1.path()).assert();
         assert.stdout(pd::str::contains("Is a directory"));
+    }
 
-        let assert = cmd
-            .arg(dir1.path())
-            .args(&["-i", "-I", "-v", "--one-file-system", "--preserve-root=/"])
-            .assert();
+    #[test]
+    /// `rmd -i empty_dir`
+    fn test_cli_interactive_remove_empty_directory() {
+        let dir1 = TempDir::new().unwrap();
+        let mut cmd = no_interactive_bin();
+
+        let assert = cmd.arg(dir1.path()).args(&["-i"]).assert();
         assert.stdout(pd::str::contains("Is a directory"));
     }
 
     #[test]
-    fn test_cli_directory_not_empty_error() {
+    /// `rmd -d empty_dir`
+    fn test_cli_directory_remove_empty_directory() {
+        let dir1 = TempDir::new().unwrap();
+        let mut cmd = no_interactive_bin();
+
+        let assert = cmd.arg(dir1.path()).arg("-d").assert();
+        assert.stdout(pd::str::contains("execute"));
+    }
+
+    #[test]
+    /// `rmd -d dir`
+    fn test_cli_directory_remove_directory() {
         let dir1 = TempDir::new().unwrap();
         dir1.child("file1").touch().unwrap();
         let mut cmd = no_interactive_bin();
@@ -371,7 +384,8 @@ mod tests {
     }
 
     #[test]
-    fn test_cli_ask_remove_directory() {
+    /// `rmd -id empty_dir`
+    fn test_cli_interactive_directory_remove_empty_directory() {
         let dir1 = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
         let assert = cmd.arg("-d").arg("-i").arg(dir1.path()).assert();
@@ -379,7 +393,18 @@ mod tests {
     }
 
     #[test]
-    fn test_cli_ask_remove_write_protected_directory() {
+    /// `rmd -id dir`
+    fn test_cli_interactive_directory_remove_directory() {
+        let dir1 = TempDir::new().unwrap();
+        dir1.child("file1").touch().unwrap();
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg("-d").arg("-i").arg(dir1.path()).assert();
+        assert.stdout(pd::str::contains("Directory not empty"));
+    }
+
+    #[test]
+    /// `rmd -id #empty_dir`
+    fn test_cli_interactive_remove_write_protected_empty_directory() {
         let dir1 = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir1.path()).unwrap().permissions();
         perms.set_readonly(true);
@@ -388,5 +413,66 @@ mod tests {
         let mut cmd = no_interactive_bin();
         let assert = cmd.arg("-d").arg("-i").arg(dir1.path()).assert();
         assert.stdout(pd::str::contains("remove write-protected directory"));
+    }
+
+    #[test]
+    /// `rmd -id #dir`
+    fn test_cli_interactive_remove_write_protected_directory() {
+        let dir1 = TempDir::new().unwrap();
+        dir1.child("file1").touch().unwrap();
+        let mut perms = fs::metadata(dir1.path()).unwrap().permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(dir1.path(), perms).unwrap();
+
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg("-d").arg("-i").arg(dir1.path()).assert();
+        assert.stdout(pd::str::contains("Directory not empty"));
+    }
+
+    #[test]
+    /// `rmd -r empty_dir`
+    fn test_cli_recursive_remove_empty_directory() {
+        let dir1 = TempDir::new().unwrap();
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg("-r").arg(dir1.path()).assert();
+        assert.stdout(pd::str::contains("execute"));
+    }
+
+    #[test]
+    /// `rmd -r dir`
+    fn test_cli_recursive_remove_directory() {
+        let dir1 = TempDir::new().unwrap();
+        dir1.child("file1").touch().unwrap();
+
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg(dir1.path()).arg("-r").assert();
+        assert.stdout(pd::str::contains("execute"));
+    }
+
+    #[test]
+    /// `rmd -r #empty_dir`
+    fn test_cli_recursive_remove_write_protected_empty_directory() {
+        let dir1 = TempDir::new().unwrap();
+        let mut perms = fs::metadata(dir1.path()).unwrap().permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(dir1.path(), perms).unwrap();
+
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg(dir1.path()).arg("-r").assert();
+        assert.stdout(pd::str::contains("remove write-protected directory"));
+    }
+
+    #[test]
+    /// `rmd -r #dir`
+    fn test_cli_recursive_remove_write_protected_directory() {
+        let dir1 = TempDir::new().unwrap();
+        dir1.child("file1").touch().unwrap();
+        let mut perms = fs::metadata(dir1.path()).unwrap().permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(dir1.path(), perms).unwrap();
+
+        let mut cmd = no_interactive_bin();
+        let assert = cmd.arg(dir1.path()).arg("-r").assert();
+        assert.stdout(pd::str::contains("descend into write-protected directory"));
     }
 }
