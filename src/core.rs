@@ -1,13 +1,13 @@
-use std::ffi::OsString;
+use std::ffi::OsStr;
 use std::{fs, path};
 
 use crate::error::Error;
 use crate::Result;
 
-pub enum RmStatus {
+pub enum RmStatus<'a> {
     Accept,
     Declined,
-    Descend(OsString),
+    Descend(&'a OsStr),
     Failed(Error),
 }
 
@@ -45,7 +45,7 @@ pub fn is_write_protected(metadata: &fs::Metadata) -> bool {
 }
 
 /// # Errors
-pub fn fs_entity(path: &OsString) -> Result<FsEntity> {
+pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
     let name = path::PathBuf::from(path)
         .file_name()
         .map(|t| t.to_string_lossy().into_owned())

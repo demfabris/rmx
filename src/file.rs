@@ -5,7 +5,7 @@ use crate::core::{is_write_protected, RmStatus};
 use crate::interact;
 
 #[must_use]
-pub fn prompt(metadata: &fs::Metadata, name: &str, mode: InteractiveMode) -> RmStatus {
+pub fn prompt<'a>(metadata: &fs::Metadata, name: &str, mode: InteractiveMode) -> RmStatus<'a> {
     let write_protected = is_write_protected(metadata);
     let empty = metadata.len() == 0;
 

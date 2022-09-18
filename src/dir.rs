@@ -1,4 +1,4 @@
-use std::ffi::OsString;
+use std::ffi::OsStr;
 use std::{fs, path};
 
 use crate::arg::{InteractiveMode, RmOptions};
@@ -8,13 +8,14 @@ use crate::interact;
 
 #[must_use]
 /// # Panics
-pub fn prompt(
+pub fn prompt<'a>(
     opt: &RmOptions,
-    path: &OsString,
+    path: &'a OsStr,
     metadata: &fs::Metadata,
     name: &str,
     mode: InteractiveMode,
-) -> RmStatus {
+    visited: bool,
+) -> RmStatus<'a> {
     let is_empty_dir = path::PathBuf::from(path)
         .read_dir()
         .unwrap()
@@ -32,13 +33,10 @@ pub fn prompt(
     }
 
     let write_protected = is_write_protected(metadata);
+    let descend = opt.recursive && !is_empty_dir && !visited;
     let message = format!(
         "rm: {descend_remove}{write_protected}directory '{name}'?",
-        descend_remove = if opt.recursive && !is_empty_dir {
-            "descend into"
-        } else {
-            "remove"
-        },
+        descend_remove = if descend { "descend into" } else { "remove" },
         write_protected = if write_protected {
             " write-protected "
         } else {
@@ -76,7 +74,9 @@ pub fn prompt(
     }
 
     if let Ok(yes) = maybe_interact {
-        if yes {
+        if yes && descend {
+            return RmStatus::Descend(path);
+        } else if yes {
             return RmStatus::Accept;
         }
         return RmStatus::Declined;

@@ -1,6 +1,9 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 
-use crate::arg::{elect_interact_level, rm_options, RmOptions};
+use std::ffi::OsStr;
+use std::fs;
+
+use crate::arg::{elect_interact_level, rm_options, InteractiveMode, RmOptions};
 use crate::core::{fs_entity, FsEntity, RmStatus};
 use error::Error;
 
@@ -38,41 +41,51 @@ fn run() -> Result<()> {
         return Ok(());
     }
 
-    // let mut dir_st = vec![String::new(); 10];
     for path in &opt.file {
-        let ent = fs_entity(path)?;
-        match ent {
-            FsEntity::File { metadata, name } => match file::prompt(&metadata, &name, mode) {
+        traverse(path, &opt, mode, false)?;
+    }
+
+    Ok(())
+}
+
+fn traverse(path: &OsStr, opt: &RmOptions, mode: InteractiveMode, visited: bool) -> Result<()> {
+    let ent = fs_entity(path)?;
+    match ent {
+        FsEntity::File { metadata, name } => match file::prompt(&metadata, &name, mode) {
+            RmStatus::Accept => {
+                println!("execute");
+            }
+            RmStatus::Descend(_) | RmStatus::Declined => return Ok(()),
+            RmStatus::Failed(err) => {
+                return Err(err);
+            }
+        },
+
+        FsEntity::Dir { metadata, name } => {
+            match dir::prompt(opt, path, &metadata, &name, mode, visited) {
                 RmStatus::Accept => {
                     println!("execute");
                 }
-                RmStatus::Descend(_) | RmStatus::Declined => continue,
+                RmStatus::Descend(folder) => {
+                    println!("descend");
+                    for entry in fs::read_dir(folder)? {
+                        let path = entry?.path();
+                        traverse(path.as_os_str(), opt, mode, false)?;
+                    }
+                    // The root folder is deleted last
+                    traverse(folder, opt, mode, true)?;
+                }
+                RmStatus::Declined => return Ok(()),
                 RmStatus::Failed(err) => {
                     return Err(err);
                 }
-            },
-
-            FsEntity::Dir { metadata, name } => {
-                match dir::prompt(&opt, path, &metadata, &name, mode) {
-                    RmStatus::Accept => {
-                        println!("execute");
-                    }
-                    RmStatus::Descend(folder) => {
-                        println!("descend {:?}", folder);
-                    }
-                    RmStatus::Declined => continue,
-                    RmStatus::Failed(err) => {
-                        return Err(err);
-                    }
-                }
-            }
-
-            FsEntity::Symlink { metadata, name } => {
-                println!("{:?} {:?}", metadata, name);
-                todo!()
             }
         }
-    }
 
-    todo!()
+        FsEntity::Symlink { metadata, name } => {
+            println!("{:?} {:?}", metadata, name);
+            todo!()
+        }
+    }
+    Ok(())
 }
