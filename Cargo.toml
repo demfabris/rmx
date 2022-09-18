@@ -1,6 +1,8 @@
 [package]
 name = "rmd"
 authors = ["Fabricio <demfabris@gmail.com>"]
+categories = ["command line utilities, filesystem"]
+repository = "https://github.com/demfabris/rmd"
 license = "MIT OR Apache-2.0"
 description = "GNU 'rm' drop in replacement with trashbin features"
 keywords = ["gnu", "remove", "trash"]
@@ -15,7 +17,7 @@ dialoguer = "0.10.1"
 thiserror = "1.0.31"
 
 [features]
-no-interactive = []
+auto-interactive = []
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.126"
