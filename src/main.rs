@@ -49,7 +49,7 @@ fn traverse(
     match ent {
         FsEntity::File { metadata, name } => {
             match file::prompt(&metadata, &name, &rel_root, mode) {
-                RmStatus::Accept => unlink_file(path, &name, &rel_root)?,
+                RmStatus::Accept => unlink_file(path, &name, &rel_root, opt)?,
                 RmStatus::Declined => return Ok(()),
                 RmStatus::Failed(err) => return Err(err),
             }
@@ -58,7 +58,7 @@ fn traverse(
         FsEntity::Dir { metadata, name } => {
             match dir::prompt(opt, path, &rel_root, &metadata, &name, mode, visited) {
                 RmStatus::Accept => {
-                    if !unlink_dir(path, &name, &rel_root, visited)? {
+                    if !unlink_dir(path, &name, &rel_root, visited, opt)? {
                         for entry in fs::read_dir(path)? {
                             let path = entry?.path();
                             let rel_root = concat_relative_root(&rel_root, &name);

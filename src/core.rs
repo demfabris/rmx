@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::{fs, io, path};
 
+use crate::arg::RmOptions;
 use crate::error::Error;
 use crate::Result;
 
@@ -59,7 +60,13 @@ pub fn concat_relative_root(rel_root: &str, name: &str) -> String {
     )
 }
 
-pub fn unlink_dir(path: &OsStr, name: &str, rel_root: &str, visited: bool) -> Result<bool> {
+pub fn unlink_dir(
+    path: &OsStr,
+    name: &str,
+    rel_root: &str,
+    visited: bool,
+    opt: &RmOptions,
+) -> Result<bool> {
     if !is_empty_dir(path) && !visited {
         return Ok(false);
     }
@@ -77,10 +84,15 @@ pub fn unlink_dir(path: &OsStr, name: &str, rel_root: &str, visited: bool) -> Re
         _ => Error::Io(err),
     })?;
 
+    if opt.verbose {
+        let relative_name = concat_relative_root(rel_root, name);
+        println!("directory '{}' was removed", relative_name);
+    }
+
     Ok(true)
 }
 
-pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str) -> Result<()> {
+pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) -> Result<()> {
     fs::remove_file(path).map_err(|err| match err.kind() {
         io::ErrorKind::PermissionDenied => {
             let relative_name = concat_relative_root(rel_root, name);
@@ -88,6 +100,11 @@ pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str) -> Result<()> {
         }
         _ => Error::Io(err),
     })?;
+
+    if opt.verbose {
+        let relative_name = concat_relative_root(rel_root, name);
+        println!("removed '{}'", relative_name);
+    }
 
     Ok(())
 }
