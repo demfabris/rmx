@@ -12,7 +12,7 @@ use predicates as pd;
 fn no_interactive_bin() -> std::process::Command {
     CargoBuild::new()
         .bin("rmd")
-        .features("no-interactive")
+        .features("auto-interactive")
         .run()
         .unwrap()
         .command()
@@ -53,7 +53,7 @@ fn test_cli_directory_remove_empty_directory() {
     let mut cmd = no_interactive_bin();
 
     let assert = cmd.arg(dir1.path()).arg("-d").assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::is_empty());
 }
 
 #[test]
@@ -74,8 +74,8 @@ fn test_cli_directory_remove_write_protected_empty_directory() {
     let mut perms = fs::metadata(dir1.path()).unwrap().permissions();
     perms.set_readonly(true);
     fs::set_permissions(dir1.path(), perms).unwrap();
-    let mut cmd = no_interactive_bin();
 
+    let mut cmd = no_interactive_bin();
     let assert = cmd.arg(dir1.path()).arg("-d").assert();
     assert.stdout(pd::str::contains("remove write-protected directory"));
 }
@@ -146,7 +146,7 @@ fn test_cli_recursive_remove_empty_directory() {
     let dir1 = TempDir::new().unwrap();
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg("-r").arg(dir1.path()).assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::is_empty());
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn test_cli_recursive_remove_directory() {
 
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg(dir1.path()).arg("-r").assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::is_empty());
 }
 
 #[test]
@@ -287,7 +287,7 @@ fn test_cli_force_directory_remove_empty_directory() {
     let dir1 = TempDir::new().unwrap();
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg("-f").arg("-d").arg(dir1.path()).assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::is_empty());
 }
 
 #[test]
@@ -310,7 +310,7 @@ fn test_cli_force_directory_remove_write_protected_empty_directory() {
 
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg("-f").arg("-d").arg(dir1.path()).assert();
-    assert.stdout(pd::str::contains("execute")); // Operation not permitted
+    assert.stdout(pd::str::contains("Operation not permitted"));
 }
 
 #[test]
@@ -380,7 +380,7 @@ fn test_cli_force_recursive_remove_empty_directory() {
     let dir1 = TempDir::new().unwrap();
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg("-f").arg("-r").arg(dir1.path()).assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::is_empty());
 }
 
 #[test]
@@ -391,7 +391,7 @@ fn test_cli_force_recursive_remove_directory() {
 
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg("-f").arg("-r").arg(dir1.path()).assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::is_empty());
 }
 
 #[test]
@@ -404,7 +404,7 @@ fn test_cli_force_recursive_remove_write_protected_empty_directory() {
 
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg("-f").arg("-r").arg(dir1.path()).assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::contains("Operation not permitted"));
 }
 
 #[test]
@@ -418,7 +418,7 @@ fn test_cli_force_recursive_remove_write_protected_directory() {
 
     let mut cmd = no_interactive_bin();
     let assert = cmd.arg("-f").arg("-r").arg(dir1.path()).assert();
-    assert.stdout(pd::str::contains("execute"));
+    assert.stdout(pd::str::contains("Permission denied"));
 }
 
 #[test]

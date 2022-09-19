@@ -1,13 +1,12 @@
 use std::ffi::OsStr;
-use std::{fs, path};
+use std::{fs, io, path};
 
 use crate::error::Error;
 use crate::Result;
 
-pub enum RmStatus<'a> {
+pub enum RmStatus {
     Accept,
     Declined,
-    Descend(&'a OsStr),
     Failed(Error),
 }
 
@@ -60,7 +59,39 @@ pub fn concat_relative_root(rel_root: &str, name: &str) -> String {
     )
 }
 
-/// # Errors
+pub fn unlink_dir(path: &OsStr, name: &str, rel_root: &str, visited: bool) -> Result<bool> {
+    if !is_empty_dir(path) && !visited {
+        return Ok(false);
+    }
+
+    if is_write_protected(&fs::metadata(path)?) {
+        let relative_name = concat_relative_root(rel_root, name);
+        return Err(Error::OperationNotPermitted(relative_name));
+    }
+
+    fs::remove_dir(path).map_err(|err| match err.kind() {
+        io::ErrorKind::PermissionDenied => {
+            let relative_name = concat_relative_root(rel_root, name);
+            Error::OperationNotPermitted(relative_name)
+        }
+        _ => Error::Io(err),
+    })?;
+
+    Ok(true)
+}
+
+pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str) -> Result<()> {
+    fs::remove_file(path).map_err(|err| match err.kind() {
+        io::ErrorKind::PermissionDenied => {
+            let relative_name = concat_relative_root(rel_root, name);
+            Error::PermissionDenied(relative_name)
+        }
+        _ => Error::Io(err),
+    })?;
+
+    Ok(())
+}
+
 pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
     let name = path::PathBuf::from(path)
         .file_name()

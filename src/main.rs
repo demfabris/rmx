@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use std::fs;
 
 use crate::arg::{elect_interact_level, rm_options, InteractiveMode, RmOptions};
-use crate::core::{concat_relative_root, fs_entity, is_empty_dir, FsEntity, RmStatus};
+use crate::core::{concat_relative_root, fs_entity, unlink_dir, unlink_file, FsEntity, RmStatus};
 use error::Error;
 
 mod arg;
@@ -18,15 +18,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 fn main() {
     if let Err(err) = run() {
-        match err {
-            Error::UnknownEntity(ref file)
-            | Error::NoSuchFile(ref file)
-            | Error::IsDirectory(ref file)
-            | Error::DirectoryNotEmpty(ref file) => {
-                println!("rm: cannot remove '{}': {}", file, err);
-            }
-            _ => (),
-        }
+        println!("{}", err);
     }
 }
 
@@ -36,9 +28,7 @@ fn run() -> Result<()> {
     let mode = elect_interact_level(&opt, &args);
 
     if opt == RmOptions::default() && !opt.force {
-        println!("rm: missing operand");
-        println!("Try 'rm --help' for more information.");
-        return Ok(());
+        return Err(Error::Usage);
     }
 
     for path in &opt.file {
@@ -59,40 +49,28 @@ fn traverse(
     match ent {
         FsEntity::File { metadata, name } => {
             match file::prompt(&metadata, &name, &rel_root, mode) {
-                RmStatus::Accept => {
-                    println!("execute");
-                    fs::remove_file(path).expect("to remove");
-                }
-                RmStatus::Descend(_) | RmStatus::Declined => return Ok(()),
-                RmStatus::Failed(err) => {
-                    return Err(err);
-                }
+                RmStatus::Accept => unlink_file(path, &name, &rel_root)?,
+                RmStatus::Declined => return Ok(()),
+                RmStatus::Failed(err) => return Err(err),
             }
         }
 
         FsEntity::Dir { metadata, name } => {
             match dir::prompt(opt, path, &rel_root, &metadata, &name, mode, visited) {
                 RmStatus::Accept => {
-                    println!("execute");
-                    let is_empty = is_empty_dir(path);
-                    if is_empty {
-                        fs::remove_dir_all(path).expect("to remove");
+                    if !unlink_dir(path, &name, &rel_root, visited)? {
+                        for entry in fs::read_dir(path)? {
+                            let path = entry?.path();
+                            let rel_root = concat_relative_root(&rel_root, &name);
+                            traverse(path.as_os_str(), rel_root, opt, mode, false)?;
+                        }
+
+                        // The root folder is deleted last
+                        traverse(path, rel_root, opt, mode, true)?;
                     }
-                }
-                RmStatus::Descend(folder) => {
-                    println!("descend");
-                    for entry in fs::read_dir(folder)? {
-                        let path = entry?.path();
-                        let rel_root = concat_relative_root(&rel_root, &name);
-                        traverse(path.as_os_str(), rel_root, opt, mode, false)?;
-                    }
-                    // The root folder is deleted last
-                    traverse(folder, rel_root, opt, mode, true)?;
                 }
                 RmStatus::Declined => return Ok(()),
-                RmStatus::Failed(err) => {
-                    return Err(err);
-                }
+                RmStatus::Failed(err) => return Err(err),
             }
         }
 

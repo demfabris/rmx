@@ -5,12 +5,12 @@ use crate::core::{concat_relative_root, is_write_protected, RmStatus};
 use crate::interact;
 
 #[must_use]
-pub fn prompt<'a>(
+pub fn prompt(
     metadata: &fs::Metadata,
     name: &str,
     rel_root: &str,
     mode: InteractiveMode,
-) -> RmStatus<'a> {
+) -> RmStatus {
     let write_protected = is_write_protected(metadata);
     let empty = metadata.len() == 0;
 
@@ -25,19 +25,14 @@ pub fn prompt<'a>(
         relative_name = concat_relative_root(rel_root, name)
     );
 
-    let maybe_interact;
-    match mode {
-        InteractiveMode::Always => {
-            maybe_interact = interact::with_message(message);
+    let maybe_interact = match mode {
+        InteractiveMode::Always => interact::with_message(message),
+        InteractiveMode::Once => {
+            println!("unimplemented");
+            Ok(false)
         }
-        InteractiveMode::Once | InteractiveMode::Never => {
-            if write_protected {
-                maybe_interact = interact::with_message(message);
-            } else {
-                return RmStatus::Accept;
-            }
-        }
-    }
+        InteractiveMode::Never => Ok(true),
+    };
 
     if let Ok(yes) = maybe_interact {
         if yes {
