@@ -1,8 +1,8 @@
 use std::ffi::OsStr;
-use std::{fs, path};
+use std::fs;
 
 use crate::arg::{InteractiveMode, RmOptions};
-use crate::core::{is_write_protected, RmStatus};
+use crate::core::{concat_relative_root, is_empty_dir, is_write_protected, RmStatus};
 use crate::error::Error;
 use crate::interact;
 
@@ -11,16 +11,13 @@ use crate::interact;
 pub fn prompt<'a>(
     opt: &RmOptions,
     path: &'a OsStr,
+    rel_root: &str,
     metadata: &fs::Metadata,
     name: &str,
     mode: InteractiveMode,
     visited: bool,
 ) -> RmStatus<'a> {
-    let is_empty_dir = path::PathBuf::from(path)
-        .read_dir()
-        .unwrap()
-        .next()
-        .is_none();
+    let is_empty_dir = is_empty_dir(path);
 
     if !opt.recursive {
         if !opt.dir {
@@ -35,14 +32,14 @@ pub fn prompt<'a>(
     let write_protected = is_write_protected(metadata);
     let descend = opt.recursive && !is_empty_dir && !visited;
     let message = format!(
-        "rm: {descend_remove}{write_protected}directory '{name}'?",
+        "rm: {descend_remove}{write_protected}directory '{relative_name}'?",
         descend_remove = if descend { "descend into" } else { "remove" },
         write_protected = if write_protected {
             " write-protected "
         } else {
             " "
         },
-        name = name
+        relative_name = concat_relative_root(rel_root, name)
     );
 
     let mut force_accept = false;

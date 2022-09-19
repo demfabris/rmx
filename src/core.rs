@@ -44,6 +44,22 @@ pub fn is_write_protected(metadata: &fs::Metadata) -> bool {
     metadata.permissions().readonly()
 }
 
+pub fn is_empty_dir(path: &OsStr) -> bool {
+    fs::read_dir(path)
+        .expect("path to be a directory")
+        .next()
+        .is_none()
+}
+
+pub fn concat_relative_root(rel_root: &str, name: &str) -> String {
+    format!(
+        "{}{}{}",
+        &rel_root,
+        if rel_root.is_empty() { "" } else { "/" },
+        &name
+    )
+}
+
 /// # Errors
 pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
     let name = path::PathBuf::from(path)

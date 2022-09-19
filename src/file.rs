@@ -1,23 +1,28 @@
 use std::fs;
 
 use crate::arg::InteractiveMode;
-use crate::core::{is_write_protected, RmStatus};
+use crate::core::{concat_relative_root, is_write_protected, RmStatus};
 use crate::interact;
 
 #[must_use]
-pub fn prompt<'a>(metadata: &fs::Metadata, name: &str, mode: InteractiveMode) -> RmStatus<'a> {
+pub fn prompt<'a>(
+    metadata: &fs::Metadata,
+    name: &str,
+    rel_root: &str,
+    mode: InteractiveMode,
+) -> RmStatus<'a> {
     let write_protected = is_write_protected(metadata);
     let empty = metadata.len() == 0;
 
     let message = format!(
-        "rm: remove{write_protected}regular{empty}file '{name}'?",
+        "rm: remove{write_protected}regular{empty}file '{relative_name}'?",
         write_protected = if write_protected {
             " write-protected "
         } else {
             " "
         },
         empty = if empty { " empty " } else { " " },
-        name = name
+        relative_name = concat_relative_root(rel_root, name)
     );
 
     let maybe_interact;

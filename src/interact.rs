@@ -7,7 +7,7 @@ use crate::Result;
 /// Fails with I/O error if can't write to stdout
 #[cfg(not(feature = "auto-interactive"))]
 pub fn with_message(message: String) -> Result<bool> {
-    Confirm::with_theme(&theme::ColorfulTheme::default())
+    Confirm::with_theme(&theme::SimpleTheme)
         .with_prompt(message)
         .default(true)
         .show_default(true)
