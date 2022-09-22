@@ -31,6 +31,25 @@ fn run() -> Result<()> {
         return Err(Error::Usage);
     }
 
+    if mode == InteractiveMode::Once && (opt.file.len() > 3 || opt.recursive) {
+        let message = format!(
+            "rm: remove {count} {arguments}{recursive}?",
+            count = opt.file.len(),
+            arguments = if opt.file.len() == 1 {
+                "argument"
+            } else {
+                "arguments"
+            },
+            recursive = if opt.recursive { " recursively" } else { "" }
+        );
+
+        match interact::with_message(message) {
+            Ok(true) => (),
+            Err(err) => return Err(err),
+            _ => return Ok(()),
+        }
+    }
+
     for path in &opt.file {
         traverse(path, String::new(), &opt, mode, false)?;
     }
@@ -45,8 +64,14 @@ fn traverse(
     mode: InteractiveMode,
     visited: bool,
 ) -> Result<()> {
-    let ent = fs_entity(path)?;
-    match ent {
+    let ent = fs_entity(path);
+
+    if let Err(err) = ent {
+        println!("{}", err);
+        return Ok(());
+    }
+
+    match ent? {
         FsEntity::File { metadata, name } => {
             match file::prompt(&metadata, &name, &rel_root, mode) {
                 RmStatus::Accept => unlink_file(path, &name, &rel_root, opt)?,

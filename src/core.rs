@@ -110,7 +110,7 @@ pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) ->
 }
 
 pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
-    let name = path::PathBuf::from(path)
+    let name = path::Path::new(path)
         .file_name()
         .map(|t| t.to_string_lossy().into_owned())
         .unwrap_or_default();

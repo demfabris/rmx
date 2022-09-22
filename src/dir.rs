@@ -7,7 +7,6 @@ use crate::error::Error;
 use crate::interact;
 
 #[must_use]
-/// # Panics
 pub fn prompt(
     opt: &RmOptions,
     path: &OsStr,
@@ -50,10 +49,7 @@ pub fn prompt(
                 Ok(true)
             }
         }
-        InteractiveMode::Once => {
-            println!("unimplemented weak prompt");
-            Ok(true)
-        }
+        InteractiveMode::Once => Ok(true),
         InteractiveMode::Never => {
             if (opt.dir || opt.recursive) && write_protected && !opt.force {
                 interact::with_message(message)

@@ -27,10 +27,7 @@ pub fn prompt(
 
     let maybe_interact = match mode {
         InteractiveMode::Always => interact::with_message(message),
-        InteractiveMode::Once => {
-            println!("unimplemented");
-            Ok(false)
-        }
+        InteractiveMode::Once => Ok(true),
         InteractiveMode::Never => {
             if write_protected {
                 interact::with_message(message)
