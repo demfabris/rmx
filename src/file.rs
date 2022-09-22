@@ -31,7 +31,13 @@ pub fn prompt(
             println!("unimplemented");
             Ok(false)
         }
-        InteractiveMode::Never => Ok(true),
+        InteractiveMode::Never => {
+            if write_protected {
+                interact::with_message(message)
+            } else {
+                Ok(true)
+            }
+        }
     };
 
     if let Ok(yes) = maybe_interact {

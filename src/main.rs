@@ -64,7 +64,6 @@ fn traverse(
                             let rel_root = concat_relative_root(&rel_root, &name);
                             traverse(path.as_os_str(), rel_root, opt, mode, false)?;
                         }
-
                         // The root folder is deleted last
                         traverse(path, rel_root, opt, mode, true)?;
                     }
