@@ -4,7 +4,9 @@ use std::ffi::OsStr;
 use std::fs;
 
 use crate::arg::{elect_interact_level, rm_options, InteractiveMode, RmOptions};
-use crate::core::{concat_relative_root, fs_entity, unlink_dir, unlink_file, FsEntity, RmStatus};
+use crate::core::{
+    concat_relative_root, fs_entity, is_different_fs, unlink_dir, unlink_file, FsEntity, RmStatus,
+};
 use error::Error;
 
 mod arg;
@@ -51,7 +53,7 @@ fn run() -> Result<()> {
     }
 
     for path in &opt.file {
-        traverse(path, String::new(), &opt, mode, false)?;
+        traverse(path, String::new(), &opt, mode, false, 0)?;
     }
 
     Ok(())
@@ -63,6 +65,7 @@ fn traverse(
     opt: &RmOptions,
     mode: InteractiveMode,
     visited: bool,
+    parent_inode_id: u64,
 ) -> Result<()> {
     let ent = fs_entity(path);
 
@@ -72,25 +75,42 @@ fn traverse(
     }
 
     match ent? {
-        FsEntity::File { metadata, name } => {
-            match file::prompt(&metadata, &name, &rel_root, mode) {
-                RmStatus::Accept => unlink_file(path, &name, &rel_root, opt)?,
-                RmStatus::Declined => return Ok(()),
-                RmStatus::Failed(err) => return Err(err),
-            }
-        }
+        FsEntity::File {
+            metadata,
+            name,
+            inode_id,
+        } => match file::prompt(&metadata, &name, &rel_root, mode) {
+            RmStatus::Accept => {
+                if is_different_fs(opt, &name, parent_inode_id, inode_id) {
+                    return Ok(());
+                }
 
-        FsEntity::Dir { metadata, name } => {
+                unlink_file(path, &name, &rel_root, opt)?;
+            }
+            RmStatus::Declined => return Ok(()),
+            RmStatus::Failed(err) => return Err(err),
+        },
+
+        FsEntity::Dir {
+            metadata,
+            name,
+            inode_id,
+        } => {
             match dir::prompt(opt, path, &rel_root, &metadata, &name, mode, visited) {
                 RmStatus::Accept => {
                     if !unlink_dir(path, &name, &rel_root, visited, opt)? {
                         for entry in fs::read_dir(path)? {
                             let path = entry?.path();
                             let rel_root = concat_relative_root(&rel_root, &name);
-                            traverse(path.as_os_str(), rel_root, opt, mode, false)?;
+
+                            if is_different_fs(opt, &rel_root, parent_inode_id, inode_id) {
+                                return Ok(());
+                            }
+
+                            traverse(path.as_os_str(), rel_root, opt, mode, false, inode_id)?;
                         }
                         // The root folder is deleted last
-                        traverse(path, rel_root, opt, mode, true)?;
+                        traverse(path, rel_root, opt, mode, true, inode_id)?;
                     }
                 }
                 RmStatus::Declined => return Ok(()),
@@ -98,8 +118,12 @@ fn traverse(
             }
         }
 
-        FsEntity::Symlink { metadata, name } => {
-            println!("{:?} {:?}", metadata, name);
+        FsEntity::Symlink {
+            metadata,
+            name,
+            inode_id,
+        } => {
+            println!("{:?} {:?} {:?}", metadata, name, inode_id);
             todo!()
         }
     }

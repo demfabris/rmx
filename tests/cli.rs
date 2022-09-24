@@ -636,6 +636,7 @@ mod flags {
             .arg("-I")
             .args(&["file", "file1", "file2", "file3"])
             .assert();
+        // interactive=once wins
         assert.stdout(pd::str::contains("remove 4 arguments?"));
 
         let mut cmd = no_interactive_bin();
@@ -645,6 +646,7 @@ mod flags {
             .arg("--interactive=always")
             .args(&["file", "file1", "file2", "file3"])
             .assert();
+        // interactive=always wins
         assert.stdout(pd::str::contains("cannot remove"));
     }
 }

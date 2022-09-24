@@ -5,7 +5,7 @@ use clap::builder::PossibleValuesParser;
 use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command, ValueHint};
 
 pub fn rm_options() -> Command<'static> {
-    Command::new("rmd")
+    let command = Command::new("rmd")
         .version(crate_version!())
         .about(crate_description!())
         .author(crate_authors!())
@@ -32,12 +32,6 @@ intrusive than -i, while still giving protection against most mistakes")
                 .takes_value(true)
                 .value_parser(PossibleValuesParser::new(vec!["never", "once", "always"]))
                 .id("WHEN")
-        )
-        .arg(
-            Arg::new("one_file_system")
-                .help("when removing a hierarchy recursively, skip any directory that is on a file system different
-from that of the corresponding command line argument")
-                .long("one-file-system")
         )
         .arg(
             Arg::new("preserve_root")
@@ -73,6 +67,15 @@ device from its parent")
                 .takes_value(true)
                 .value_hint(ValueHint::FilePath)
                 .multiple_values(true)
+        );
+
+    #[cfg(unix)]
+    command
+        .arg(
+            Arg::new("one_file_system")
+                .help("when removing a hierarchy recursively, skip any directory that is on a file system different
+from that of the corresponding command line argument")
+                .long("one-file-system")
         )
 }
 
@@ -83,7 +86,10 @@ pub struct RmOptions {
     pub interactive_always: bool,
     pub interactive_once: bool,
     pub interactive: InteractiveMode,
+
+    #[cfg(unix)]
     pub one_file_system: bool,
+
     pub preserve_root: bool,
     pub recursive: bool,
     pub dir: bool,
@@ -117,7 +123,10 @@ impl From<&ArgMatches> for RmOptions {
                     _ => InteractiveMode::Never,
                 }
             },
+
+            #[cfg(unix)]
             one_file_system: args.is_present("one_file_system"),
+
             preserve_root: args.is_present("all"),
             recursive: args.is_present("recursive"),
             dir: args.is_present("dir"),

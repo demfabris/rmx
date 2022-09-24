@@ -1,6 +1,9 @@
 use std::ffi::OsStr;
 use std::{fs, io, path};
 
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
+
 use crate::arg::RmOptions;
 use crate::error::Error;
 use crate::Result;
@@ -16,22 +19,23 @@ pub enum FsEntity {
     Symlink {
         metadata: fs::Metadata,
         name: String,
+        inode_id: u64,
     },
     Dir {
         metadata: fs::Metadata,
         name: String,
+        inode_id: u64,
     },
     File {
         metadata: fs::Metadata,
         name: String,
+        inode_id: u64,
     },
 }
 
 #[cfg(unix)]
 #[must_use]
 pub fn is_write_protected(metadata: &fs::Metadata) -> bool {
-    use std::os::unix::fs::MetadataExt;
-
     let file_uid = metadata.uid();
     let proc_uid = unsafe { libc::getuid() };
 
@@ -116,14 +120,53 @@ pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
         .unwrap_or_default();
     let metadata = fs::metadata(path).map_err(|_| Error::NoSuchFile(name.clone()))?;
 
+    #[cfg(unix)]
+    let inode_id = metadata.dev();
+
+    #[cfg(not(unix))]
+    let inode_id = 0_u64;
+
     let entity = match metadata {
-        m if m.is_dir() => FsEntity::Dir { metadata: m, name },
-        m if m.is_file() => FsEntity::File { metadata: m, name },
-        m if m.is_symlink() => FsEntity::Symlink { metadata: m, name },
+        m if m.is_dir() => FsEntity::Dir {
+            metadata: m,
+            name,
+            inode_id,
+        },
+        m if m.is_file() => FsEntity::File {
+            metadata: m,
+            name,
+            inode_id,
+        },
+        m if m.is_symlink() => FsEntity::Symlink {
+            metadata: m,
+            name,
+            inode_id,
+        },
         _ => {
             return Err(Error::UnknownEntity(name));
         }
     };
 
     Ok(entity)
+}
+
+pub fn is_different_fs(opt: &RmOptions, fullname: &str, parent: u64, child: u64) -> bool {
+    // This is either top path or we're not on unix
+    if parent == 0 {
+        return false;
+    }
+
+    #[cfg(unix)]
+    if opt.one_file_system && parent != child {
+        println!(
+            "rm: skipping '{fullname}', since it's on a different device",
+            fullname = fullname
+        );
+        true
+    } else {
+        false
+    }
+
+    #[cfg(not(unix))]
+    false
 }
