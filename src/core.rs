@@ -1,4 +1,4 @@
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::{fs, io, path};
 
 #[cfg(unix)]
@@ -150,7 +150,7 @@ pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
     Ok(entity)
 }
 
-pub fn is_different_fs(opt: &RmOptions, fullname: &str, parent: u64, child: u64) -> bool {
+pub fn one_file_system(opt: &RmOptions, fullname: &str, parent: u64, child: u64) -> bool {
     // This is either top path or we're not on unix
     if parent == 0 {
         return false;
@@ -168,5 +168,47 @@ pub fn is_different_fs(opt: &RmOptions, fullname: &str, parent: u64, child: u64)
     }
 
     #[cfg(not(unix))]
+    false
+}
+
+pub fn preserve_root(opt: &RmOptions, path: &OsStr) -> bool {
+    #[cfg(not(any(windows, unix)))]
+    {
+        println!("rm: unsupported");
+        return true;
+    }
+
+    if opt.no_preserve_root {
+        return false;
+    }
+
+    #[cfg(unix)]
+    let pred = if opt.preserve_root == "all" {
+        OsString::from("/")
+    } else {
+        opt.preserve_root.clone()
+    };
+
+    #[cfg(windows)]
+    let pred = if opt.preserve_root == "all" {
+        OsString::from("C:\\")
+    } else {
+        opt.preserve_root.clone()
+    };
+
+    let maybe_path = path::Path::new(path).canonicalize().ok();
+    let maybe_pred = path::Path::new(&pred).canonicalize().ok();
+
+    if let (Some(fullpath), Some(fullpred)) = (maybe_path, maybe_pred) {
+        if fullpath == fullpred {
+            println!(
+                "rm: refusing to remove '{path}': skipping (preserve-root='{pred}')",
+                path = path.to_string_lossy(),
+                pred = pred.to_string_lossy()
+            );
+            return true;
+        }
+    }
+
     false
 }

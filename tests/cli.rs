@@ -485,6 +485,19 @@ mod dir {
             .assert();
         assert.stdout(pd::str::contains("remove 2 arguments recursively?"));
     }
+
+    #[test]
+    fn preserve_root_equals_dir_remove_directory() {
+        let dir = TempDir::new().unwrap();
+
+        let mut cmd = no_interactive_bin();
+        let assert = cmd
+            .arg(format!("--preserve-root={}", dir.path().display()))
+            .arg("-d")
+            .args(&[dir.path(), dir.path()])
+            .assert();
+        assert.stdout(pd::str::contains("refusing to remove"));
+    }
 }
 
 mod file {

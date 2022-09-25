@@ -5,7 +5,7 @@ use clap::builder::PossibleValuesParser;
 use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command, ValueHint};
 
 pub fn rm_options() -> Command<'static> {
-    let command = Command::new("rmd")
+    let mut command = Command::new("rmd")
         .version(crate_version!())
         .about(crate_description!())
         .author(crate_authors!())
@@ -32,15 +32,6 @@ intrusive than -i, while still giving protection against most mistakes")
                 .takes_value(true)
                 .value_parser(PossibleValuesParser::new(vec!["never", "once", "always"]))
                 .id("WHEN")
-        )
-        .arg(
-            Arg::new("preserve_root")
-                .help("do not remove '/' (default); with 'all', reject any command line argument on a separate
-device from its parent")
-                .long("preserve-root")
-                .takes_value(true)
-                .id("all")
-                .value_hint(ValueHint::DirPath)
         )
         .arg(
             Arg::new("recursive")
@@ -70,16 +61,36 @@ device from its parent")
         );
 
     #[cfg(unix)]
-    command
+    {
+        command = command
         .arg(
             Arg::new("one_file_system")
                 .help("when removing a hierarchy recursively, skip any directory that is on a file system different
 from that of the corresponding command line argument")
                 .long("one-file-system")
+        );
+    }
+
+    #[cfg(any(windows, unix))]
+    command
+        .arg(
+            Arg::new("no_preserve_root")
+                .help("don't treat '/' or 'C:\\' specially")
+                .long("no-preserve-root")
+        )
+        .arg(
+            Arg::new("preserve_root")
+                .help("do not remove '/' (default); with 'all', reject any command line argument on a separate
+device from its parent")
+                .long("preserve-root")
+                .takes_value(true)
+                .allow_invalid_utf8(true)
+                .value_hint(ValueHint::FilePath)
+                .id("all")
         )
 }
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct RmOptions {
     pub force: bool,
@@ -90,11 +101,37 @@ pub struct RmOptions {
     #[cfg(unix)]
     pub one_file_system: bool,
 
-    pub preserve_root: bool,
+    #[cfg(any(windows, unix))]
+    pub no_preserve_root: bool,
+
+    #[cfg(any(windows, unix))]
+    pub preserve_root: OsString,
+
     pub recursive: bool,
     pub dir: bool,
     pub verbose: bool,
     pub file: Vec<OsString>,
+}
+
+impl Default for RmOptions {
+    fn default() -> Self {
+        Self {
+            force: false,
+            interactive_always: false,
+            interactive_once: false,
+            interactive: InteractiveMode::Never,
+            #[cfg(unix)]
+            one_file_system: false,
+            #[cfg(any(windows, unix))]
+            no_preserve_root: false,
+            #[cfg(any(windows, unix))]
+            preserve_root: OsString::from("all"),
+            recursive: false,
+            dir: false,
+            verbose: false,
+            file: Vec::new(),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -127,7 +164,13 @@ impl From<&ArgMatches> for RmOptions {
             #[cfg(unix)]
             one_file_system: args.is_present("one_file_system"),
 
-            preserve_root: args.is_present("all"),
+            #[cfg(any(unix, windows))]
+            preserve_root: args
+                .value_of_os("all")
+                .map_or_else(|| OsString::from("all"), ToOwned::to_owned),
+            #[cfg(any(unix, windows))]
+            no_preserve_root: args.is_present("no_preserve_root"),
+
             recursive: args.is_present("recursive"),
             dir: args.is_present("dir"),
             verbose: args.is_present("verbose"),

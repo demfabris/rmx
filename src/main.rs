@@ -5,7 +5,8 @@ use std::fs;
 
 use crate::arg::{elect_interact_level, rm_options, InteractiveMode, RmOptions};
 use crate::core::{
-    concat_relative_root, fs_entity, is_different_fs, unlink_dir, unlink_file, FsEntity, RmStatus,
+    concat_relative_root, fs_entity, one_file_system, preserve_root, unlink_dir, unlink_file,
+    FsEntity, RmStatus,
 };
 use error::Error;
 
@@ -53,13 +54,13 @@ fn run() -> Result<()> {
     }
 
     for path in &opt.file {
-        traverse(path, String::new(), &opt, mode, false, 0)?;
+        traverse_dfs(path, String::new(), &opt, mode, false, 0)?;
     }
 
     Ok(())
 }
 
-fn traverse(
+fn traverse_dfs(
     path: &OsStr,
     rel_root: String,
     opt: &RmOptions,
@@ -81,7 +82,7 @@ fn traverse(
             inode_id,
         } => match file::prompt(&metadata, &name, &rel_root, mode) {
             RmStatus::Accept => {
-                if is_different_fs(opt, &name, parent_inode_id, inode_id) {
+                if one_file_system(opt, &name, parent_inode_id, inode_id) {
                     return Ok(());
                 }
 
@@ -98,19 +99,22 @@ fn traverse(
         } => {
             match dir::prompt(opt, path, &rel_root, &metadata, &name, mode, visited) {
                 RmStatus::Accept => {
+                    if preserve_root(opt, path) {
+                        return Ok(());
+                    }
+
                     if !unlink_dir(path, &name, &rel_root, visited, opt)? {
                         for entry in fs::read_dir(path)? {
                             let path = entry?.path();
                             let rel_root = concat_relative_root(&rel_root, &name);
 
-                            if is_different_fs(opt, &rel_root, parent_inode_id, inode_id) {
+                            if one_file_system(opt, &rel_root, parent_inode_id, inode_id) {
                                 return Ok(());
                             }
-
-                            traverse(path.as_os_str(), rel_root, opt, mode, false, inode_id)?;
+                            traverse_dfs(path.as_os_str(), rel_root, opt, mode, false, inode_id)?;
                         }
-                        // The root folder is deleted last
-                        traverse(path, rel_root, opt, mode, true, inode_id)?;
+                        // Parent folder is deleted last
+                        traverse_dfs(path, rel_root, opt, mode, true, inode_id)?;
                     }
                 }
                 RmStatus::Declined => return Ok(()),
