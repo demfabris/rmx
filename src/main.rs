@@ -19,7 +19,8 @@ mod interact;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     if let Err(err) = run() {
         println!("{}", err);
     }
@@ -28,12 +29,19 @@ fn main() {
 fn run() -> Result<()> {
     let args = rm_options().get_matches();
     let opt = RmOptions::from(&args);
-    let mode = elect_interact_level(&opt, &args);
+
+    if opt.rip {
+        for path in &opt.file {
+            let entries = jwalk::WalkDir::new(path).skip_hidden(false);
+        }
+        return Ok(());
+    }
 
     if opt == RmOptions::default() && !opt.force {
         return Err(Error::Usage);
     }
 
+    let mode = elect_interact_level(&opt, &args);
     if mode == InteractiveMode::Once && (opt.file.len() > 3 || opt.recursive) {
         let message = format!(
             "rm: remove {count} {arguments}{recursive}?",

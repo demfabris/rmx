@@ -201,6 +201,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2801af0d36612ae591caa9568261fddce32ce6e08a7275ea334a06a4ad021a2c"
+dependencies = [
+ "cfg-if",
+ "crossbeam-channel",
+ "crossbeam-deque",
+ "crossbeam-epoch",
+ "crossbeam-queue",
+ "crossbeam-utils",
+]
+
+[[package]]
 name = "crossbeam-channel"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -233,6 +247,16 @@ dependencies = [
  "memoffset",
  "once_cell",
  "scopeguard",
+]
+
+[[package]]
+name = "crossbeam-queue"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cd42583b04998a5363558e5f9291ee5a5ff6b49944332103f251e7479a82aa7"
+dependencies = [
+ "cfg-if",
+ "crossbeam-utils",
 ]
 
 [[package]]
@@ -423,6 +447,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "jwalk"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "172752e853a067cbce46427de8470ddf308af7fd8ceaf9b682ef31a5021b6bb9"
+dependencies = [
+ "crossbeam",
+ "rayon",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -500,6 +534,12 @@ name = "os_str_bytes"
 version = "6.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "648001efe5d5c0102d8cea768e348da85d90af8ba91f0bea908f157951493cd4"
+
+[[package]]
+name = "pin-project-lite"
+version = "0.2.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116"
 
 [[package]]
 name = "plotters"
@@ -652,9 +692,11 @@ dependencies = [
  "criterion",
  "dialoguer",
  "escargot",
+ "jwalk",
  "libc",
  "predicates",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -808,6 +850,30 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "tokio"
+version = "1.21.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0020c875007ad96677dcc890298f4b942882c5d4eb7cc8f439fc3bf813dc9c95"
+dependencies = [
+ "autocfg",
+ "num_cpus",
+ "once_cell",
+ "pin-project-lite",
+ "tokio-macros",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9724f9a975fb987ef7a3cd9be0350edcbe130698af5b8f7a631e23d42d052484"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

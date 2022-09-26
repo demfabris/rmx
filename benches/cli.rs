@@ -55,7 +55,7 @@ fn tempdir_with_n_nested_children(n: usize) -> TempDir {
     dir
 }
 
-fn bench(c: &mut Criterion) {
+fn bench_single_threaded(c: &mut Criterion) {
     let mut group = c.benchmark_group("dfs");
     let mut rmd = rmd();
     let mut rm = rm();
@@ -100,7 +100,7 @@ fn bench(c: &mut Criterion) {
 
     group.bench_function("rmd: remove nested m folders depth n each", |b| {
         b.iter(|| {
-            let dir = tempdir_with_m_childs_nested_n_each(black_box(50), black_box(200));
+            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
             rmd.arg("-r")
                 .arg(dir.path())
                 .output()
@@ -109,7 +109,7 @@ fn bench(c: &mut Criterion) {
     });
     group.bench_function("rm: remove nested m folders depth n each", |b| {
         b.iter(|| {
-            let dir = tempdir_with_m_childs_nested_n_each(black_box(50), black_box(200));
+            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
             rm.arg("-r")
                 .arg(dir.path())
                 .output()
@@ -118,5 +118,31 @@ fn bench(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench);
+fn bench_async_rt(c: &mut Criterion) {
+    let mut group = c.benchmark_group("rip");
+    let mut rmd = rmd();
+    let mut rm = rm();
+
+    group.bench_function("rmd: remove all", |b| {
+        b.iter(|| {
+            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
+            rmd.arg("-r")
+                .arg("-x")
+                .arg(dir.path())
+                .output()
+                .expect("to execute rmd");
+        })
+    });
+    group.bench_function("rm: remove all", |b| {
+        b.iter(|| {
+            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
+            rm.arg("-r")
+                .arg(dir.path())
+                .output()
+                .expect("to execute rm");
+        })
+    });
+}
+
+criterion_group!(benches, bench_single_threaded, bench_async_rt);
 criterion_main!(benches);

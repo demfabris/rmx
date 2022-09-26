@@ -58,6 +58,14 @@ intrusive than -i, while still giving protection against most mistakes")
                 .takes_value(true)
                 .value_hint(ValueHint::FilePath)
                 .multiple_values(true)
+        )
+        .arg(
+            Arg::new("rip")
+            .help("multithreaded force remove, intended for removing deeply nested directories; will not respect any other flags, use with caution")
+            .long("rip")
+            .short('x')
+            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once"])
+
         );
 
     #[cfg(unix)]
@@ -111,6 +119,8 @@ pub struct RmOptions {
     pub dir: bool,
     pub verbose: bool,
     pub file: Vec<OsString>,
+
+    pub rip: bool,
 }
 
 impl Default for RmOptions {
@@ -130,6 +140,7 @@ impl Default for RmOptions {
             dir: false,
             verbose: false,
             file: Vec::new(),
+            rip: false,
         }
     }
 }
@@ -178,6 +189,7 @@ impl From<&ArgMatches> for RmOptions {
                 .get_many::<OsString>("FILE")
                 .map(|t| t.map(ToOwned::to_owned).collect())
                 .unwrap_or_default(),
+            rip: args.is_present("rip"),
         }
     }
 }
