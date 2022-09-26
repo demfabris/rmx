@@ -27,9 +27,20 @@ assert_fs = "1.0.7"
 assert_cmd = "2.0.4"
 predicates = "2.1.1"
 escargot = "0.5.7"
+criterion = "0.4.0"
 
 [profile.release]
 lto = true
 codegen-units = 1
 opt-level = "s"
 strip = true
+
+[profile.bench]
+lto = true
+codegen-units = 1
+opt-level = "s"
+strip = true
+
+[[bench]]
+name = "cli"
+harness = false
