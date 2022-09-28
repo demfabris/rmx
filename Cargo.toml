@@ -12,18 +12,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3.2.12", features = ["cargo"] }
-dialoguer = "0.10.1"
-thiserror = "1.0.31"
+clap = { version = "3.2.22", features = ["cargo"] }
+dialoguer = "0.10.2"
+thiserror = "1.0.37"
 jwalk = "0.6.0"
-tokio = { version = "1.21.1", features = ["fs", "rt", "rt-multi-thread", "macros"] }
-rayon = "1.5.3"
 
 [features]
 auto-interactive = []
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.126"
+libc = "0.2.133"
 
 [dev-dependencies]
 assert_fs = "1.0.7"
