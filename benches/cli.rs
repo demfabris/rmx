@@ -9,7 +9,6 @@ use escargot::CargoBuild;
 fn rmd() -> Command {
     CargoBuild::new()
         .bin("rmd")
-        .features("auto-interactive")
         .current_release()
         .run()
         .unwrap()
@@ -18,6 +17,10 @@ fn rmd() -> Command {
 
 fn rm() -> Command {
     Command::new("rm")
+}
+
+fn rsync() -> Command {
+    Command::new("rsync")
 }
 
 fn tempdir_with_n_files(n: usize) -> TempDir {
@@ -60,18 +63,18 @@ fn bench_single_threaded(c: &mut Criterion) {
     let mut rmd = rmd();
     let mut rm = rm();
 
+    let dir = tempdir_with_n_files(black_box(1000));
     group.bench_function("rmd: remove folder with n files", |b| {
         b.iter(|| {
-            let dir = tempdir_with_n_files(black_box(1000));
             rmd.arg("-r")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rmd");
         })
     });
+    let dir = tempdir_with_n_files(black_box(1000));
     group.bench_function("rm: remove folder with n files", |b| {
         b.iter(|| {
-            let dir = tempdir_with_n_files(black_box(1000));
             rm.arg("-r")
                 .arg(dir.path())
                 .output()
@@ -79,18 +82,18 @@ fn bench_single_threaded(c: &mut Criterion) {
         })
     });
 
+    let dir = tempdir_with_n_nested_children(black_box(200));
     group.bench_function("rmd: remove nested folder depth n", |b| {
         b.iter(|| {
-            let dir = tempdir_with_n_nested_children(black_box(200));
             rmd.arg("-r")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rmd");
         })
     });
+    let dir = tempdir_with_n_nested_children(black_box(200));
     group.bench_function("rm: remove nested folder depth n", |b| {
         b.iter(|| {
-            let dir = tempdir_with_n_nested_children(black_box(200));
             rm.arg("-r")
                 .arg(dir.path())
                 .output()
@@ -98,18 +101,18 @@ fn bench_single_threaded(c: &mut Criterion) {
         })
     });
 
+    let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
     group.bench_function("rmd: remove nested m folders depth n each", |b| {
         b.iter(|| {
-            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
             rmd.arg("-r")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rmd");
         })
     });
+    let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
     group.bench_function("rm: remove nested m folders depth n each", |b| {
         b.iter(|| {
-            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
             rm.arg("-r")
                 .arg(dir.path())
                 .output()
@@ -119,13 +122,13 @@ fn bench_single_threaded(c: &mut Criterion) {
 }
 
 fn bench_async_rt(c: &mut Criterion) {
-    let mut group = c.benchmark_group("rip");
+    let mut group = c.benchmark_group("async");
     let mut rmd = rmd();
     let mut rm = rm();
 
+    let dir = tempdir_with_m_childs_nested_n_each(black_box(50), black_box(200));
     group.bench_function("rmd: remove all", |b| {
         b.iter(|| {
-            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
             rmd.arg("-r")
                 .arg("-x")
                 .arg(dir.path())
@@ -133,9 +136,9 @@ fn bench_async_rt(c: &mut Criterion) {
                 .expect("to execute rmd");
         })
     });
+    let dir = tempdir_with_m_childs_nested_n_each(black_box(50), black_box(200));
     group.bench_function("rm: remove all", |b| {
         b.iter(|| {
-            let dir = tempdir_with_m_childs_nested_n_each(black_box(20), black_box(200));
             rm.arg("-r")
                 .arg(dir.path())
                 .output()
@@ -144,5 +147,5 @@ fn bench_async_rt(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_single_threaded, bench_async_rt);
+criterion_group!(benches, bench_single_threaded, bench_async_rt,);
 criterion_main!(benches);

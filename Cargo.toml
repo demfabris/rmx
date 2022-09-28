@@ -17,6 +17,7 @@ dialoguer = "0.10.1"
 thiserror = "1.0.31"
 jwalk = "0.6.0"
 tokio = { version = "1.21.1", features = ["fs", "rt", "rt-multi-thread", "macros"] }
+rayon = "1.5.3"
 
 [features]
 auto-interactive = []

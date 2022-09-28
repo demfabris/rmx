@@ -695,6 +695,7 @@ dependencies = [
  "jwalk",
  "libc",
  "predicates",
+ "rayon",
  "thiserror",
  "tokio",
 ]

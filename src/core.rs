@@ -6,7 +6,8 @@ use std::os::unix::fs::MetadataExt;
 
 use crate::arg::RmOptions;
 use crate::error::Error;
-use crate::Result;
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub enum RmStatus {
     Accept,
