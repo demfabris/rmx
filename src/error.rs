@@ -20,14 +20,14 @@ pub enum Error {
     #[error("{}", fmt_error("Unknown file system entity", Some(.0)))]
     UnknownEntity(String),
 
-    #[error("rmd: missing operand\nTry 'rmd --help' for more information.")]
+    #[error("rmx: missing operand\nTry 'rmx --help' for more information.")]
     Usage,
 
-    #[error("rmd: cannot remove: {}", .0)]
+    #[error("rmx: cannot remove: {}", .0)]
     Io(#[from] std::io::Error),
 }
 
 fn fmt_error(cause: &str, maybe_name: Option<&str>) -> String {
     let name = maybe_name.map_or_else(|| String::from(""), |name| format!(" '{}'", name));
-    format!(r"rmd: cannot remove{}: {}", name, cause)
+    format!(r"rmx: cannot remove{}: {}", name, cause)
 }

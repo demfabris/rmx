@@ -8,10 +8,10 @@ use assert_fs::TempDir;
 use escargot::CargoBuild;
 use predicates as pd;
 
-/// Build `rmd` bin that accepts every command line interaction
+/// Build `rmx` bin that accepts every command line interaction
 fn no_interactive_bin() -> std::process::Command {
     CargoBuild::new()
-        .bin("rmd")
+        .bin("rmx")
         .features("auto-interactive")
         .run()
         .unwrap()
@@ -22,7 +22,7 @@ mod dir {
     use super::*;
 
     #[test]
-    /// `rmd `
+    /// `rmx `
     fn missing_operand_error() {
         let mut cmd = no_interactive_bin();
         let assert = cmd.assert();
@@ -30,7 +30,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd empty_dir`
+    /// `rmx empty_dir`
     fn remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -40,7 +40,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -i empty_dir`
+    /// `rmx -i empty_dir`
     fn interactive_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -50,7 +50,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -d empty_dir`
+    /// `rmx -d empty_dir`
     fn directory_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -60,7 +60,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -d dir`
+    /// `rmx -d dir`
     fn directory_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -71,7 +71,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -d #empty_dir`
+    /// `rmx -d #empty_dir`
     fn directory_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -84,7 +84,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -d #dir`
+    /// `rmx -d #dir`
     fn directory_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -98,7 +98,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -id empty_dir`
+    /// `rmx -id empty_dir`
     fn interactive_directory_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -107,7 +107,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -id dir`
+    /// `rmx -id dir`
     fn interactive_directory_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -117,7 +117,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -id #empty_dir`
+    /// `rmx -id #empty_dir`
     fn interactive_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -130,7 +130,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -id #dir`
+    /// `rmx -id #dir`
     fn interactive_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -144,7 +144,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -r empty_dir`
+    /// `rmx -r empty_dir`
     fn recursive_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -153,7 +153,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -r dir`
+    /// `rmx -r dir`
     fn recursive_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -164,7 +164,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -r #empty_dir`
+    /// `rmx -r #empty_dir`
     fn recursive_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -177,7 +177,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -r #dir`
+    /// `rmx -r #dir`
     fn recursive_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -191,7 +191,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -ri empty_dir`
+    /// `rmx -ri empty_dir`
     fn recursive_interactive_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -200,7 +200,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -ri dir`
+    /// `rmx -ri dir`
     fn recursive_interactive_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -211,7 +211,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -ri #empty_dir`
+    /// `rmx -ri #empty_dir`
     fn recursive_interactive_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -224,7 +224,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -ri #dir`
+    /// `rmx -ri #dir`
     fn recursive_interactive_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -238,7 +238,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -f empty_dir`
+    /// `rmx -f empty_dir`
     fn force_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -247,7 +247,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -f dir`
+    /// `rmx -f dir`
     fn force_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -258,7 +258,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -f #empty_dir`
+    /// `rmx -f #empty_dir`
     fn force_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -271,7 +271,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -f #dir`
+    /// `rmx -f #dir`
     fn force_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -285,7 +285,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fd empty_dir`
+    /// `rmx -fd empty_dir`
     fn force_directory_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -294,7 +294,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fd dir`
+    /// `rmx -fd dir`
     fn force_directory_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -304,7 +304,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fd #empty_dir`
+    /// `rmx -fd #empty_dir`
     fn force_directory_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -317,7 +317,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fd #dir`
+    /// `rmx -fd #dir`
     fn force_directory_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -331,7 +331,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fdi empty_dir`
+    /// `rmx -fdi empty_dir`
     fn force_directory_interactive_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -340,7 +340,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fdi dir`
+    /// `rmx -fdi dir`
     fn force_directory_interactive_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -351,7 +351,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fdi #empty_dir`
+    /// `rmx -fdi #empty_dir`
     fn force_directory_interactive_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -364,7 +364,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -fdi #dir`
+    /// `rmx -fdi #dir`
     fn force_directory_interactive_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -378,7 +378,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rf empty_dir`
+    /// `rmx -rf empty_dir`
     fn force_recursive_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -387,7 +387,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rf dir`
+    /// `rmx -rf dir`
     fn force_recursive_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -398,7 +398,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rf #empty_dir`
+    /// `rmx -rf #empty_dir`
     fn force_recursive_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -411,7 +411,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rf #dir`
+    /// `rmx -rf #dir`
     fn force_recursive_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -425,7 +425,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rfi empty_dir`
+    /// `rmx -rfi empty_dir`
     fn force_recursive_interactive_remove_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut cmd = no_interactive_bin();
@@ -434,7 +434,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rfi dir`
+    /// `rmx -rfi dir`
     fn force_recursive_interactive_remove_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -445,7 +445,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rfi #empty_dir`
+    /// `rmx -rfi #empty_dir`
     fn force_recursive_interactive_remove_write_protected_empty_directory() {
         let dir = TempDir::new().unwrap();
         let mut perms = fs::metadata(dir.path()).unwrap().permissions();
@@ -458,7 +458,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -rfi #dir`
+    /// `rmx -rfi #dir`
     fn force_recursive_interactive_remove_write_protected_directory() {
         let dir = TempDir::new().unwrap();
         dir.child("file").touch().unwrap();
@@ -472,7 +472,7 @@ mod dir {
     }
 
     #[test]
-    /// `rmd -Ir dir dir1`
+    /// `rmx -Ir dir dir1`
     fn interactive_once_remove_two_empty_directories_recursively() {
         let dir = TempDir::new().unwrap();
         let dir1 = TempDir::new().unwrap();

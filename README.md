@@ -1,4 +1,4 @@
-# rmd
+# rmx
 
 Multiplatform drop in replacement for GNU `rm`, with extra features.
 

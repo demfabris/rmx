@@ -1,15 +1,13 @@
 [package]
-name = "rmd"
+name = "rmx"
 authors = ["Fabricio <demfabris@gmail.com>"]
 categories = ["command line utilities, filesystem"]
-repository = "https://github.com/demfabris/rmd"
+repository = "https://github.com/demfabris/rmx"
 license = "MIT OR Apache-2.0"
 description = "GNU 'rm' drop in replacement with trashbin features"
 keywords = ["gnu", "remove", "trash"]
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = { version = "3.2.22", features = ["cargo"] }

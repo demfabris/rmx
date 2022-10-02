@@ -677,7 +677,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rmd"
+name = "rmx"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
