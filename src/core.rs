@@ -116,12 +116,22 @@ pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) ->
     Ok(())
 }
 
+pub fn unlink_symlink(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) -> Result<()> {
+    fs::remove_file(path)?;
+    let relative_name = concat_relative_root(rel_root, name);
+    if opt.verbose {
+        println!("removed '{}'", relative_name);
+    }
+
+    Ok(())
+}
+
 pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
     let name = path::Path::new(path)
         .file_name()
         .map(|t| t.to_string_lossy().into_owned())
         .unwrap_or_default();
-    let metadata = fs::metadata(path).map_err(|_| Error::NoSuchFile(name.clone()))?;
+    let metadata = fs::symlink_metadata(path).map_err(|_| Error::NoSuchFile(name.clone()))?;
 
     #[cfg(unix)]
     let inode_id = metadata.dev();
@@ -135,12 +145,12 @@ pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
             name,
             inode_id,
         },
-        m if m.is_file() => FsEntity::File {
+        m if m.is_symlink() => FsEntity::Symlink {
             metadata: m,
             name,
             inode_id,
         },
-        m if m.is_symlink() => FsEntity::Symlink {
+        m if m.is_file() => FsEntity::File {
             metadata: m,
             name,
             inode_id,

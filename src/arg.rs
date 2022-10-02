@@ -62,6 +62,12 @@ intrusive than -i, while still giving protection against most mistakes")
                 .multiple_values(true)
         )
         .arg(
+            Arg::new("follow_links")
+            .help("follow symbolic links; this does not handle cycles")
+            .long("follow-links")
+            .short('l')
+        )
+        .arg(
             Arg::new("rip")
             .help("multithreaded force remove, intended for removing deeply nested directories; will not respect any other flags, use with caution")
             .long("rip")
@@ -122,6 +128,7 @@ pub struct RmOptions {
     pub verbose: bool,
     pub file: Vec<OsString>,
 
+    pub follow_symlinks: bool,
     pub rip: bool,
 }
 
@@ -142,6 +149,7 @@ impl Default for RmOptions {
             dir: false,
             verbose: false,
             file: Vec::new(),
+            follow_symlinks: false,
             rip: false,
         }
     }
@@ -191,6 +199,7 @@ impl From<&ArgMatches> for RmOptions {
                 .get_many::<OsString>("FILE")
                 .map(|t| t.map(ToOwned::to_owned).collect())
                 .unwrap_or_default(),
+            follow_symlinks: args.is_present("follow_links"),
             rip: args.is_present("rip"),
         }
     }

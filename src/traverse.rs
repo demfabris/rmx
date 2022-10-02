@@ -9,9 +9,9 @@ use std::sync::mpsc::{Receiver, Sender};
 use crate::arg::{InteractiveMode, RmOptions};
 use crate::core::{
     concat_relative_root, fs_entity, one_file_system, preserve_root, unlink_dir, unlink_file,
-    FsEntity, Result, RmStatus,
+    unlink_symlink, FsEntity, Result, RmStatus,
 };
-use crate::{dir, file};
+use crate::{dir, file, link};
 
 pub fn dfs(
     path: &OsStr,
@@ -75,14 +75,29 @@ pub fn dfs(
             }
         }
 
-        FsEntity::Symlink {
-            metadata,
-            name,
-            inode_id,
-        } => {
-            println!("{:?} {:?} {:?}", metadata, name, inode_id);
-            todo!()
-        }
+        FsEntity::Symlink { name, inode_id, .. } => match link::prompt(&name, &rel_root, mode) {
+            RmStatus::Accept => {
+                if one_file_system(opt, &name, parent_inode_id, inode_id) {
+                    return Ok(());
+                }
+
+                if opt.follow_symlinks {
+                    let resolved_path = fs::read_link(path)?;
+                    dfs(
+                        resolved_path.as_os_str(),
+                        String::new(),
+                        opt,
+                        mode,
+                        true,
+                        parent_inode_id,
+                    )?;
+                }
+
+                unlink_symlink(path, &name, &rel_root, opt)?;
+            }
+            RmStatus::Declined => return Ok(()),
+            RmStatus::Failed(err) => return Err(err),
+        },
     }
 
     Ok(())

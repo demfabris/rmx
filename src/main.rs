@@ -10,6 +10,7 @@ mod dir;
 mod error;
 mod file;
 mod interact;
+mod link;
 mod traverse;
 
 fn main() {
