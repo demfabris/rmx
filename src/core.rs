@@ -9,6 +9,8 @@ use crate::error::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+pub const BIN_NAME: &str = env!("CARGO_BIN_NAME");
+
 pub enum RmStatus {
     Accept,
     Declined,

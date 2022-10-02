@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 use std::fs;
 
 use crate::arg::{InteractiveMode, RmOptions};
-use crate::core::{concat_relative_root, is_empty_dir, is_write_protected, RmStatus};
+use crate::core::{concat_relative_root, is_empty_dir, is_write_protected, RmStatus, BIN_NAME};
 use crate::error::Error;
 use crate::interact;
 
@@ -31,7 +31,8 @@ pub fn prompt(
     let write_protected = is_write_protected(metadata);
     let descend = opt.recursive && !is_empty_dir && !visited;
     let message = format!(
-        "rm: {descend_remove}{write_protected}directory '{relative_name}'?",
+        "{bin}: {descend_remove}{write_protected}directory '{relative_name}'?",
+        bin = BIN_NAME,
         descend_remove = if descend { "descend into" } else { "remove" },
         write_protected = if write_protected {
             " write-protected "

@@ -1,7 +1,7 @@
 use std::fs;
 
 use crate::arg::InteractiveMode;
-use crate::core::{concat_relative_root, is_write_protected, RmStatus};
+use crate::core::{concat_relative_root, is_write_protected, RmStatus, BIN_NAME};
 use crate::interact;
 
 #[must_use]
@@ -15,7 +15,8 @@ pub fn prompt(
     let empty = metadata.len() == 0;
 
     let message = format!(
-        "rm: remove{write_protected}regular{empty}file '{relative_name}'?",
+        "{bin}: remove{write_protected}regular{empty}file '{relative_name}'?",
+        bin = BIN_NAME,
         write_protected = if write_protected {
             " write-protected "
         } else {

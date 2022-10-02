@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::core::BIN_NAME;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("{}", fmt_error("Permission denied", Some(.0)))]
@@ -20,10 +22,14 @@ pub enum Error {
     #[error("{}", fmt_error("Unknown file system entity", Some(.0)))]
     UnknownEntity(String),
 
-    #[error("rmx: missing operand\nTry 'rmx --help' for more information.")]
+    #[error(
+        "{}: missing operand\nTry '{} --help' for more information.",
+        BIN_NAME,
+        BIN_NAME
+    )]
     Usage,
 
-    #[error("rmx: cannot remove: {}", .0)]
+    #[error("{}: cannot remove: {}", BIN_NAME, .0)]
     Io(#[from] std::io::Error),
 }
 

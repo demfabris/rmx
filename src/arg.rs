@@ -4,8 +4,10 @@ use std::ffi::OsString;
 use clap::builder::PossibleValuesParser;
 use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command, ValueHint};
 
+use crate::core::BIN_NAME;
+
 pub fn rm_options() -> Command<'static> {
-    let mut command = Command::new("rmd")
+    let mut command = Command::new(BIN_NAME)
         .version(crate_version!())
         .about(crate_description!())
         .author(crate_authors!())
