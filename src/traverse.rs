@@ -97,9 +97,14 @@ pub fn walk(_opt: &RmOptions, path: &OsStr) -> Result<()> {
     let handle = std::thread::spawn(move || loop {
         match rx.recv() {
             Ok(path) => {
-                let c_path = CString::new(path.to_str().unwrap()).unwrap();
+                #[cfg(unix)]
+                {
+                    let c_path = CString::new(path.to_str().unwrap()).unwrap();
+                    unsafe { if libc::unlink(c_path.as_ptr()) == -1 {} };
+                }
 
-                unsafe { if libc::unlink(c_path.as_ptr()) == -1 {} };
+                #[cfg(windows)]
+                fs::remove_file(path).unwrap();
             }
             _ => break,
         }
@@ -124,9 +129,14 @@ pub fn walk(_opt: &RmOptions, path: &OsStr) -> Result<()> {
 
     for (_, dir) in dirs.iter().rev() {
         for d in dir {
-            let c_path = CString::new(d.to_str().unwrap()).unwrap();
+            #[cfg(unix)]
+            {
+                let c_path = CString::new(d.to_str().unwrap()).unwrap();
+                unsafe { if libc::rmdir(c_path.as_ptr()) == -1 {} };
+            }
 
-            unsafe { if libc::rmdir(c_path.as_ptr()) == -1 {} };
+            #[cfg(windows)]
+            fs::remove_dir(path).unwrap();
         }
     }
 
