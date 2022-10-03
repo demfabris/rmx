@@ -637,6 +637,7 @@ mod file {
     }
 }
 
+#[cfg(unix)]
 mod links {
     use super::*;
     use std::os::unix::fs::symlink;
