@@ -73,7 +73,6 @@ intrusive than -i, while still giving protection against most mistakes")
             .long("rip")
             .short('x')
             .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once"])
-
         );
 
     #[cfg(unix)]
@@ -104,6 +103,12 @@ device from its parent")
                 .value_hint(ValueHint::FilePath)
                 .id("all")
         )
+        .arg(
+            Arg::new("trash")
+            .help("send files to system trash bin")
+            .long("trash")
+            .short('t')
+        )
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -130,6 +135,7 @@ pub struct RmOptions {
 
     pub follow_symlinks: bool,
     pub rip: bool,
+    pub trash: bool,
 }
 
 impl Default for RmOptions {
@@ -151,6 +157,7 @@ impl Default for RmOptions {
             file: Vec::new(),
             follow_symlinks: false,
             rip: false,
+            trash: false,
         }
     }
 }
@@ -201,6 +208,7 @@ impl From<&ArgMatches> for RmOptions {
                 .unwrap_or_default(),
             follow_symlinks: args.is_present("follow_links"),
             rip: args.is_present("rip"),
+            trash: args.is_present("trash"),
         }
     }
 }

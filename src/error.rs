@@ -22,6 +22,9 @@ pub enum Error {
     #[error("{}", fmt_error("Unknown file system entity", Some(.0)))]
     UnknownEntity(String),
 
+    #[error("{}: failed to access system trash bin", BIN_NAME)]
+    TrashBin(#[from] trash::Error),
+
     #[error(
         "{}: missing operand\nTry '{} --help' for more information.",
         BIN_NAME,

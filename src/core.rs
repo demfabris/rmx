@@ -83,13 +83,17 @@ pub fn unlink_dir(
         return Err(Error::OperationNotPermitted(relative_name));
     }
 
-    fs::remove_dir(path).map_err(|err| match err.kind() {
-        io::ErrorKind::PermissionDenied => {
-            let relative_name = concat_relative_root(rel_root, name);
-            Error::OperationNotPermitted(relative_name)
-        }
-        _ => Error::Io(err),
-    })?;
+    if opt.trash {
+        fs::remove_dir(path).map_err(|err| match err.kind() {
+            io::ErrorKind::PermissionDenied => {
+                let relative_name = concat_relative_root(rel_root, name);
+                Error::OperationNotPermitted(relative_name)
+            }
+            _ => Error::Io(err),
+        })?;
+    } else {
+        trash::delete(path)?;
+    }
 
     if opt.verbose {
         let relative_name = concat_relative_root(rel_root, name);
@@ -100,13 +104,17 @@ pub fn unlink_dir(
 }
 
 pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) -> Result<()> {
-    fs::remove_file(path).map_err(|err| match err.kind() {
-        io::ErrorKind::PermissionDenied => {
-            let relative_name = concat_relative_root(rel_root, name);
-            Error::PermissionDenied(relative_name)
-        }
-        _ => Error::Io(err),
-    })?;
+    if opt.trash {
+        trash::delete(path)?;
+    } else {
+        fs::remove_file(path).map_err(|err| match err.kind() {
+            io::ErrorKind::PermissionDenied => {
+                let relative_name = concat_relative_root(rel_root, name);
+                Error::PermissionDenied(relative_name)
+            }
+            _ => Error::Io(err),
+        })?;
+    }
 
     if opt.verbose {
         let relative_name = concat_relative_root(rel_root, name);
@@ -117,9 +125,14 @@ pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) ->
 }
 
 pub fn unlink_symlink(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) -> Result<()> {
-    fs::remove_file(path)?;
-    let relative_name = concat_relative_root(rel_root, name);
+    if opt.trash {
+        trash::delete(path)?;
+    } else {
+        fs::remove_file(path)?;
+    }
+
     if opt.verbose {
+        let relative_name = concat_relative_root(rel_root, name);
         println!("removed '{}'", relative_name);
     }
 
