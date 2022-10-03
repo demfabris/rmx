@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
-use std::ffi::CString;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Receiver, Sender};
+
+#[cfg(unix)]
+use std::ffi::CString;
 
 use crate::arg::{InteractiveMode, RmOptions};
 use crate::core::{
@@ -143,14 +145,14 @@ pub fn walk(_opt: &RmOptions, path: &OsStr) -> Result<()> {
     handle.join().unwrap();
 
     for (_, dir) in dirs.iter().rev() {
+        #[cfg(unix)]
         for d in dir {
-            #[cfg(unix)]
-            {
-                let c_path = CString::new(d.to_str().unwrap()).unwrap();
-                unsafe { if libc::rmdir(c_path.as_ptr()) == -1 {} };
-            }
+            let c_path = CString::new(d.to_str().unwrap()).unwrap();
+            unsafe { if libc::rmdir(c_path.as_ptr()) == -1 {} };
+        }
 
-            #[cfg(windows)]
+        #[cfg(windows)]
+        for _ in dir {
             fs::remove_dir(path).unwrap();
         }
     }

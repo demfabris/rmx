@@ -6,6 +6,7 @@ use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Com
 
 use crate::core::BIN_NAME;
 
+#[allow(clippy::too_many_lines)]
 pub fn rm_options() -> Command<'static> {
     let mut command = Command::new(BIN_NAME)
         .version(crate_version!())
@@ -87,7 +88,8 @@ from that of the corresponding command line argument")
     }
 
     #[cfg(any(windows, unix))]
-    command
+    {
+        command = command
         .arg(
             Arg::new("no_preserve_root")
                 .help("don't treat '/' or 'C:\\' specially")
@@ -108,7 +110,10 @@ device from its parent")
             .help("send files to system trash bin")
             .long("trash")
             .short('t')
-        )
+        );
+    }
+
+    command
 }
 
 #[derive(Debug, Eq, PartialEq)]

@@ -149,7 +149,7 @@ pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
     #[cfg(unix)]
     let inode_id = metadata.dev();
 
-    #[cfg(not(unix))]
+    #[cfg(windows)]
     let inode_id = 0_u64;
 
     let entity = match metadata {
@@ -176,13 +176,13 @@ pub fn fs_entity(path: &OsStr) -> Result<FsEntity> {
     Ok(entity)
 }
 
+#[cfg(unix)]
 pub fn one_file_system(opt: &RmOptions, fullname: &str, parent: u64, child: u64) -> bool {
     // This is either top path or we're not on unix
     if parent == 0 {
         return false;
     }
 
-    #[cfg(unix)]
     if opt.one_file_system && parent != child {
         println!(
             "rm: skipping '{fullname}', since it's on a different device",
@@ -192,8 +192,14 @@ pub fn one_file_system(opt: &RmOptions, fullname: &str, parent: u64, child: u64)
     } else {
         false
     }
+}
 
-    #[cfg(not(unix))]
+#[cfg(windows)]
+pub const fn one_file_system(_opt: &RmOptions, _fullname: &str, parent: u64, _child: u64) -> bool {
+    if parent == 0 {
+        return false;
+    }
+
     false
 }
 
