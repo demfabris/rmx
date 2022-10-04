@@ -23,6 +23,7 @@ fn run() -> Result<()> {
     let args = rm_options().get_matches();
     let opt = RmOptions::from(&args);
 
+    // Rip mode
     if opt.rip {
         for path in &opt.file {
             traverse::walk(path)?;
@@ -31,6 +32,7 @@ fn run() -> Result<()> {
         return Ok(());
     }
 
+    // Flatten mode
     if opt.flatten != -1 {
         for path in &opt.file {
             traverse::flatten(&opt, path)?;
