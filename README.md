@@ -9,7 +9,7 @@ Multiplatform drop in replacement for GNU `rm` with extra features
 This project is a close port of GNU `rm`. The idea is extending the functionality around `rm` API and bring some niceties with improved performance, specially for large files and deeply nested directories.
 
 ## Features
-- [ ] :paperclip: Trashbin semantics
+- [x] :paperclip: Trashbin semantics
 - [x] :zap: Blazingly fast
 - [ ] :mag_right: More filtering options
 
