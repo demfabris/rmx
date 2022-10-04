@@ -72,6 +72,10 @@ dir
 └── file4
 ```
 
+### Sending files to system trash bin
+
+`rmx file1 file2 -t`
+
 ## Installation
 
 Currently only obtainable via [crates.io](https://crates.io/crates/rmx) and this repo.
