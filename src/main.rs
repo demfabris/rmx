@@ -25,7 +25,15 @@ fn run() -> Result<()> {
 
     if opt.rip {
         for path in &opt.file {
-            traverse::walk(&opt, path)?;
+            traverse::walk(path)?;
+        }
+
+        return Ok(());
+    }
+
+    if opt.flatten != -1 {
+        for path in &opt.file {
+            traverse::flatten(&opt, path)?;
         }
 
         return Ok(());

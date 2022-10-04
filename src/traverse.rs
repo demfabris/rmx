@@ -107,7 +107,7 @@ pub fn dfs(
 
 #[allow(clippy::unnecessary_wraps)]
 #[allow(clippy::while_let_loop)]
-pub fn walk(_opt: &RmOptions, path: &OsStr) -> Result<()> {
+pub fn walk(path: &OsStr) -> Result<()> {
     let mut dirs: BTreeMap<usize, Vec<PathBuf>> = BTreeMap::new();
     let (tx, rx): (Sender<PathBuf>, Receiver<PathBuf>) = channel();
 
@@ -154,6 +154,54 @@ pub fn walk(_opt: &RmOptions, path: &OsStr) -> Result<()> {
         #[cfg(windows)]
         for _ in dir {
             fs::remove_dir(path).unwrap();
+        }
+    }
+
+    Ok(())
+}
+
+#[allow(clippy::cast_possible_wrap)]
+pub fn flatten(opt: &RmOptions, path: &OsStr) -> Result<()> {
+    let mut dirs: BTreeMap<isize, Vec<PathBuf>> = BTreeMap::new();
+    let ent = fs_entity(path)?;
+
+    if let FsEntity::Dir { .. } = ent {
+        let level = opt.flatten;
+
+        jwalk::WalkDir::new(path)
+            .skip_hidden(false)
+            .into_iter()
+            .for_each(|t| {
+                let t = t.unwrap();
+                let (path, depth) = (t.path(), t.depth as isize);
+
+                if depth >= level && path.is_dir() {
+                    dirs.entry(depth).or_insert_with(Vec::new).push(path);
+                } else if depth > level && path.is_file() {
+                    let mut inner_depth = depth;
+                    let canonical_path = path.canonicalize().expect("to canonicalize");
+
+                    while inner_depth != level {
+                        let parent = canonical_path.parent().unwrap().parent().unwrap();
+                        let mut parent_ents = fs::read_dir(&parent).expect("to read parent dir");
+                        let filename = path.file_name().unwrap();
+
+                        if parent_ents.any(|e| e.unwrap().file_name() == filename) {
+                            break;
+                        }
+
+                        fs::rename(&path, parent.join(&filename)).expect("to join parent path");
+                        inner_depth -= 1;
+                    }
+                }
+            });
+
+        for (_, dir) in dirs.iter().rev() {
+            for d in dir {
+                if fs::read_dir(d)?.next().is_none() {
+                    fs::remove_dir(d)?;
+                }
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 use std::borrow::ToOwned;
 use std::ffi::OsString;
 
-use clap::builder::PossibleValuesParser;
+use clap::builder::{PossibleValuesParser, RangedU64ValueParser};
 use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command, ValueHint};
 
 use crate::core::BIN_NAME;
@@ -50,6 +50,21 @@ intrusive than -i, while still giving protection against most mistakes")
                 .short('d')
         )
         .arg(
+            Arg::new("no_preserve_root")
+                .help("don't treat '/' or 'C:\\' specially")
+                .long("no-preserve-root")
+        )
+        .arg(
+            Arg::new("preserve_root")
+                .help("do not remove '/' (default); with 'all', reject any command line argument on a separate
+device from its parent")
+                .long("preserve-root")
+                .takes_value(true)
+                .allow_invalid_utf8(true)
+                .value_hint(ValueHint::FilePath)
+                .id("ALL")
+        )
+        .arg(
             Arg::new("verbose")
                 .help("explain what is being done")
                 .long("verbose")
@@ -61,19 +76,6 @@ intrusive than -i, while still giving protection against most mistakes")
                 .takes_value(true)
                 .value_hint(ValueHint::FilePath)
                 .multiple_values(true)
-        )
-        .arg(
-            Arg::new("follow_links")
-            .help("follow symbolic links; this does not handle cycles")
-            .long("follow-links")
-            .short('l')
-        )
-        .arg(
-            Arg::new("rip")
-            .help("multithreaded force remove, intended for removing deeply nested directories; will not respect any other flags, use with caution")
-            .long("rip")
-            .short('x')
-            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once"])
         );
 
     #[cfg(unix)]
@@ -87,29 +89,37 @@ from that of the corresponding command line argument")
         );
     }
 
+    // New features
     #[cfg(any(windows, unix))]
     {
         command = command
-        .arg(
-            Arg::new("no_preserve_root")
-                .help("don't treat '/' or 'C:\\' specially")
-                .long("no-preserve-root")
-        )
-        .arg(
-            Arg::new("preserve_root")
-                .help("do not remove '/' (default); with 'all', reject any command line argument on a separate
-device from its parent")
-                .long("preserve-root")
-                .takes_value(true)
-                .allow_invalid_utf8(true)
-                .value_hint(ValueHint::FilePath)
-                .id("all")
-        )
         .arg(
             Arg::new("trash")
             .help("send files to system trash bin")
             .long("trash")
             .short('t')
+        )
+        .arg(
+            Arg::new("follow_links")
+            .help("follow symbolic links; this does not handle cycles")
+            .long("follow-links")
+            .short('l')
+        )
+        .arg(
+            Arg::new("flatten")
+            .help("flatten directory structure from 'DEPTH' onwards, leaving only files and symlinks; name conflicts will be skipped")
+            .long("flatten")
+            .id("DEPTH")
+            .takes_value(true)
+            .value_parser(RangedU64ValueParser::<isize>::new())
+            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once", "rip"])
+        )
+        .arg(
+            Arg::new("rip")
+            .help("multithreaded force remove, intended for removing deeply nested directories; will not respect any other flags, use with caution")
+            .long("rip")
+            .short('x')
+            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once", "DEPTH"])
         );
     }
 
@@ -138,9 +148,11 @@ pub struct RmOptions {
     pub verbose: bool,
     pub file: Vec<OsString>,
 
+    // New features
     pub follow_symlinks: bool,
     pub rip: bool,
     pub trash: bool,
+    pub flatten: isize,
 }
 
 impl Default for RmOptions {
@@ -163,6 +175,7 @@ impl Default for RmOptions {
             follow_symlinks: false,
             rip: false,
             trash: false,
+            flatten: -1_isize,
         }
     }
 }
@@ -199,7 +212,7 @@ impl From<&ArgMatches> for RmOptions {
 
             #[cfg(any(unix, windows))]
             preserve_root: args
-                .value_of_os("all")
+                .value_of_os("ALL")
                 .map_or_else(|| OsString::from("all"), ToOwned::to_owned),
             #[cfg(any(unix, windows))]
             no_preserve_root: args.is_present("no_preserve_root"),
@@ -214,6 +227,7 @@ impl From<&ArgMatches> for RmOptions {
             follow_symlinks: args.is_present("follow_links"),
             rip: args.is_present("rip"),
             trash: args.is_present("trash"),
+            flatten: args.get_one("DEPTH").copied().unwrap_or(-1),
         }
     }
 }

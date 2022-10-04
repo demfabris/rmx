@@ -10,7 +10,7 @@ version = "0.1.1"
 edition = "2021"
 
 [dependencies]
-clap = { version = "3.2.22", features = ["cargo"] }
+clap = { version = "3", features = ["cargo"] }
 dialoguer = "0.10.2"
 thiserror = "1.0.37"
 jwalk = "0.6.0"
