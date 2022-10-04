@@ -9,7 +9,8 @@ Multiplatform drop in replacement for GNU `rm` with extra features
 This project is a close port of GNU `rm`. The idea is extending the functionality around `rm` API and bring some niceties with improved performance, specially for large files and deeply nested directories.
 
 ## Features
-- [x] :paperclip: Trashbin semantics
+- [x] :penguin: Original GNU `rm` api
+- [x] :paperclip: System trash bin integration (`-t`)
 - [x] :zap: Blazingly fast
 - [ ] :mag_right: More filtering options
 
@@ -31,6 +32,45 @@ Benches are defined [here](https://github.com/demfabris/rmx/blob/master/benches/
 | multiple deeply nested folders (rip mode) |4.5762ms|14.079ms|274.99ms|
 
 _numbers obtained on a XPS 13 9300, at commit: `cace6812`_
+
+## Examples
+
+### Deleting deeply nested directory
+
+`rmx --rip node_modules`
+
+### Flattening a directory at depth = 1
+
+#### Before
+```
+dir
+├── dir2
+│   ├── dir3
+│   ├── dir4
+│   │   ├── file1
+│   │   └── file5
+│   ├── file1
+│   ├── file3
+│   └── file4
+├── file1
+└── file2
+```
+
+`rmx --flatten 1 dir`
+
+#### After
+```
+dir
+├── dir2
+│   ├── dir4
+│   │   └── file1  # name conflicts are skipped
+│   ├── file1
+│   └── file5
+├── file1
+├── file2
+├── file3
+└── file4
+```
 
 ## Installation
 
