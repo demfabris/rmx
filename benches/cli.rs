@@ -20,10 +20,6 @@ fn rm() -> Command {
     Command::new("rm")
 }
 
-fn rsync() -> Command {
-    Command::new("rsync")
-}
-
 fn n_files(n: usize) -> TempDir {
     let dir = TempDir::new().unwrap();
 
@@ -63,12 +59,12 @@ fn bench_dfs_n_files(c: &mut Criterion) {
     let mut group = c.benchmark_group("dfs n files");
     let mut rmx = rmx();
     let mut rm = rm();
-    let mut rsync = rsync();
 
     let dir = n_files(black_box(500));
-    group.bench_function("rmx: remove folder with n files", |b| {
+    group.bench_function("rmx -rf", |b| {
         b.iter(|| {
             rmx.arg("-r")
+                .arg("-f")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rmx");
@@ -76,26 +72,13 @@ fn bench_dfs_n_files(c: &mut Criterion) {
     });
 
     let dir = n_files(black_box(500));
-    group.bench_function("rm: remove folder with n files", |b| {
+    group.bench_function("rm -rf", |b| {
         b.iter(|| {
             rm.arg("-r")
+                .arg("-f")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rm");
-        })
-    });
-
-    let dir = n_files(black_box(500));
-    group.bench_function("rsync: remove folder with n files", |b| {
-        b.iter(|| {
-            let empty_dir = TempDir::new().unwrap();
-            rsync
-                .arg("-a")
-                .arg("--delete")
-                .arg(&empty_dir.path())
-                .arg(dir.path())
-                .output()
-                .expect("to execute rsync");
         })
     });
 }
@@ -104,12 +87,12 @@ fn bench_dfs_n_nested_folders(c: &mut Criterion) {
     let mut group = c.benchmark_group("dfs n nested folders");
     let mut rmx = rmx();
     let mut rm = rm();
-    let mut rsync = rsync();
 
     let dir = n_nested_folder(black_box(100));
-    group.bench_function("rmx: remove nested folder depth n", |b| {
+    group.bench_function("rmx -rf", |b| {
         b.iter(|| {
             rmx.arg("-r")
+                .arg("-f")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rmx");
@@ -117,26 +100,13 @@ fn bench_dfs_n_nested_folders(c: &mut Criterion) {
     });
 
     let dir = n_nested_folder(black_box(100));
-    group.bench_function("rm: remove nested folder depth n", |b| {
+    group.bench_function("rm -rf", |b| {
         b.iter(|| {
             rm.arg("-r")
+                .arg("-f")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rm");
-        })
-    });
-
-    let dir = n_nested_folder(black_box(100));
-    group.bench_function("rsync: remove nested folder depth n", |b| {
-        b.iter(|| {
-            let empty_dir = TempDir::new().unwrap();
-            rsync
-                .arg("-a")
-                .arg("--delete")
-                .arg(&empty_dir.path())
-                .arg(dir.path())
-                .output()
-                .expect("to execute rsync");
         })
     });
 }
@@ -145,12 +115,12 @@ fn bench_dfs_m_folders_n_nested_each(c: &mut Criterion) {
     let mut group = c.benchmark_group("dfs m nested folder n");
     let mut rmx = rmx();
     let mut rm = rm();
-    let mut rsync = rsync();
 
     let dir = m_nested_folder_n(black_box(20), black_box(100));
-    group.bench_function("rmx: remove nested m folders depth n each", |b| {
+    group.bench_function("rmx -rf", |b| {
         b.iter(|| {
             rmx.arg("-r")
+                .arg("-f")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rmx");
@@ -158,26 +128,13 @@ fn bench_dfs_m_folders_n_nested_each(c: &mut Criterion) {
     });
 
     let dir = m_nested_folder_n(black_box(20), black_box(100));
-    group.bench_function("rm: remove nested m folders depth n each", |b| {
+    group.bench_function("rm -rf", |b| {
         b.iter(|| {
             rm.arg("-r")
+                .arg("-f")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rm");
-        })
-    });
-
-    let dir = m_nested_folder_n(black_box(20), black_box(100));
-    group.bench_function("rsync: -a --delete", |b| {
-        b.iter(|| {
-            let empty_dir = TempDir::new().unwrap();
-            rsync
-                .arg("-a")
-                .arg("--delete")
-                .arg(&empty_dir.path())
-                .arg(dir.path())
-                .output()
-                .expect("to execute rsync");
         })
     });
 }
@@ -186,10 +143,9 @@ fn bench_rip_mode(c: &mut Criterion) {
     let mut group = c.benchmark_group("rip mode");
     let mut rmx = rmx();
     let mut rm = rm();
-    let mut rsync = rsync();
 
     let dir = m_nested_folder_n(black_box(20), black_box(100));
-    group.bench_function("rmx: rip mode", |b| {
+    group.bench_function("rmx --rip", |b| {
         b.iter(|| {
             rmx.arg("-x")
                 .arg(dir.path())
@@ -199,27 +155,13 @@ fn bench_rip_mode(c: &mut Criterion) {
     });
 
     let dir = m_nested_folder_n(black_box(20), black_box(100));
-    group.bench_function("rm: remove all", |b| {
+    group.bench_function("rm -rf", |b| {
         b.iter(|| {
             rm.arg("-r")
                 .arg("-f")
                 .arg(dir.path())
                 .output()
                 .expect("to execute rm");
-        })
-    });
-
-    let dir = m_nested_folder_n(black_box(20), black_box(100));
-    group.bench_function("rsync: -a --delete", |b| {
-        b.iter(|| {
-            let empty_dir = TempDir::new().unwrap();
-            rsync
-                .arg("-a")
-                .arg("--delete")
-                .arg(&empty_dir.path())
-                .arg(dir.path())
-                .output()
-                .expect("to execute rsync");
         })
     });
 }
