@@ -35,42 +35,9 @@ _numbers obtained on a XPS 13 9300, at commit: `cace6812`_
 
 ## Examples
 
-### Deleting deeply nested directory
+### Deleting deeply nested directory (blazingly fast)
 
 `rmx --rip node_modules`
-
-### Flattening a directory at depth = 1
-
-#### Before
-```
-dir
-├── dir2
-│   ├── dir3
-│   ├── dir4
-│   │   ├── file1
-│   │   └── file5
-│   ├── file1
-│   ├── file3
-│   └── file4
-├── file1
-└── file2
-```
-
-`rmx --flatten 1 dir`
-
-#### After
-```
-dir
-├── dir2
-│   ├── dir4
-│   │   └── file1  # name conflicts are skipped
-│   ├── file1
-│   └── file5
-├── file1
-├── file2
-├── file3
-└── file4
-```
 
 ### Sending files to system trash bin
 

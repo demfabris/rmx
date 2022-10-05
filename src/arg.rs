@@ -1,7 +1,7 @@
 use std::borrow::ToOwned;
 use std::ffi::OsString;
 
-use clap::builder::{PossibleValuesParser, RangedU64ValueParser};
+use clap::builder::PossibleValuesParser;
 use clap::{crate_authors, crate_description, crate_version, Arg, ArgMatches, Command, ValueHint};
 
 use crate::core::BIN_NAME;
@@ -106,20 +106,11 @@ from that of the corresponding command line argument")
             .short('l')
         )
         .arg(
-            Arg::new("flatten")
-            .help("flatten directory structure from 'DEPTH' onwards, leaving only files and symlinks; name conflicts will be skipped")
-            .long("flatten")
-            .id("DEPTH")
-            .takes_value(true)
-            .value_parser(RangedU64ValueParser::<isize>::new())
-            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once", "rip"])
-        )
-        .arg(
             Arg::new("rip")
             .help("multithreaded force remove, intended for removing deeply nested directories; will not respect any other flags, use with caution")
             .long("rip")
             .short('x')
-            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once", "DEPTH"])
+            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once"])
         );
     }
 
@@ -152,7 +143,6 @@ pub struct RmOptions {
     pub follow_symlinks: bool,
     pub rip: bool,
     pub trash: bool,
-    pub flatten: isize,
 }
 
 impl Default for RmOptions {
@@ -175,7 +165,6 @@ impl Default for RmOptions {
             follow_symlinks: false,
             rip: false,
             trash: false,
-            flatten: -1_isize,
         }
     }
 }
@@ -227,7 +216,6 @@ impl From<&ArgMatches> for RmOptions {
             follow_symlinks: args.is_present("follow_links"),
             rip: args.is_present("rip"),
             trash: args.is_present("trash"),
-            flatten: args.get_one("DEPTH").copied().unwrap_or(-1),
         }
     }
 }

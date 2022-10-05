@@ -32,15 +32,6 @@ fn run() -> Result<()> {
         return Ok(());
     }
 
-    // Flatten mode
-    if opt.flatten != -1 {
-        for path in &opt.file {
-            traverse::flatten(&opt, path)?;
-        }
-
-        return Ok(());
-    }
-
     if opt == RmOptions::default() && !opt.force {
         return Err(Error::Usage);
     }
