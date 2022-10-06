@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
 
-use crate::arg::{elect_interact_level, rm_options, InteractiveMode, RmOptions};
+use crate::arg::{interact_level, rm_options, InteractiveMode, RmOptions};
 use crate::core::{Result, BIN_NAME};
 use error::Error;
 
@@ -36,7 +36,7 @@ fn run() -> Result<()> {
         return Err(Error::Usage);
     }
 
-    let mode = elect_interact_level(&opt, &args);
+    let mode = interact_level(&opt, &args);
     if mode == InteractiveMode::Once && (opt.file.len() > 3 || opt.recursive) {
         let message = format!(
             "{bin}: remove {count} {arguments}{recursive}?",

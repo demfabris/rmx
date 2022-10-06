@@ -220,37 +220,12 @@ impl From<&ArgMatches> for RmOptions {
     }
 }
 
-/// Get the last occurence of a flag and return its index
-#[inline]
-pub fn last_flag_occurence(indices_of: Option<clap::Indices>, is_present: bool) -> usize {
-    if is_present {
-        *indices_of
-            .map(std::iter::Iterator::collect::<Vec<usize>>)
-            .unwrap_or_default()
-            .last()
-            .unwrap_or(&0)
-    } else {
-        0
-    }
-}
-
 #[must_use]
 #[inline]
-pub fn elect_interact_level(opt: &RmOptions, args: &ArgMatches) -> InteractiveMode {
-    let flag_always = last_flag_occurence(
-        args.indices_of("interactive_always"),
-        opt.interactive_always,
-    );
-    let flag_once = last_flag_occurence(args.indices_of("interactive_once"), opt.interactive_once);
-    let flag_mode = last_flag_occurence(args.indices_of("WHEN"), true);
-
-    if flag_always > flag_once && flag_always > flag_mode {
-        InteractiveMode::Always
-    } else if flag_once > flag_always && flag_once > flag_mode {
-        InteractiveMode::Once
-    } else if flag_mode > flag_always && flag_mode > flag_once {
-        opt.interactive
-    } else {
-        InteractiveMode::Never
+pub fn interact_level(opt: &RmOptions, args: &ArgMatches) -> InteractiveMode {
+    match args {
+        x if x.is_present("interactive_always") => InteractiveMode::Always,
+        x if x.is_present("interactive_once") => InteractiveMode::Once,
+        _ => opt.interactive,
     }
 }
