@@ -13,6 +13,7 @@ This project is a close port of GNU `rm`. The idea is extending the functionalit
 - [x] :paperclip: System trash bin integration (`-t`)
 - [x] :zap: Blazingly fast
 - [ ] :mag_right: More filtering options
+- [ ] :smile: You tell me
 
 ## Benchmarks
 
@@ -24,14 +25,14 @@ Benches are defined [here](https://github.com/demfabris/rmx/blob/master/benches/
 
 ### Comparison
 
-| remove                     | rmx | rm | rsync |
+| remove                     | rmx | rm | rmt |
 |----------------------------|-----|----|-------|
-| files                      |5.6285ms|14.201ms|786.72ms|
-| recursively nested folders |6.1517ms|14.732ms|714.86ms|
-| multiple deeply nested folders      |6.3199ms|14.624ms|294.71ms|
-| multiple deeply nested folders (rip mode) |4.5762ms|14.079ms|274.99ms|
+| files                      |5.7739ms|14.121ms|7.2263ms|
+| recursively nested folders |5.7798ms|14.128ms|7.3677ms|
+| multiple deeply nested folders      |5.2066ms|14.669ms|7.2347ms|
+| multiple deeply nested folders (rip mode) |4.6359ms|14.160ms|7.5436ms|
 
-_numbers obtained on a XPS 13 9300, at commit: `cace6812`_
+_numbers obtained on a XPS 13 9300, at commit: `7929f6`_
 
 ## Examples
 
@@ -43,11 +44,25 @@ _numbers obtained on a XPS 13 9300, at commit: `cace6812`_
 
 `rmx file1 file2 -t`
 
+### Follow symlinks (unix only)
+
+`rmx --follow-links link`
+
+### Standard GNU `rm` usage
+
+- `rmx --one-file-system -i *.txt` _handles more glob matching args, `rm` panics at ~10k+ matches`
+- `rmx --preserve-root=/home --interactive=once /home/*/*`
+- `rmx --verbose -rf --no-preserve-root /`
+
 ## Installation
 
 Currently only obtainable via [crates.io](https://crates.io/crates/rmx) and this repo.
 
 `cargo install rmx`
+
+*AUR* (soon)
+
+*Prebuilt binaries* (soon)
 
 ### Pro-tip:
 Put in your favorite Shell rc file:
