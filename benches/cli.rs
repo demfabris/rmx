@@ -20,6 +20,10 @@ fn rm() -> Command {
     Command::new("rm")
 }
 
+fn rmt() -> Command {
+    Command::new("rmt")
+}
+
 fn n_files(n: usize) -> TempDir {
     let dir = TempDir::new().unwrap();
 
@@ -59,6 +63,7 @@ fn bench_dfs_n_files(c: &mut Criterion) {
     let mut group = c.benchmark_group("dfs n files");
     let mut rmx = rmx();
     let mut rm = rm();
+    let mut rmt = rmt();
 
     let dir = n_files(black_box(500));
     group.bench_function("rmx -rf", |b| {
@@ -79,6 +84,17 @@ fn bench_dfs_n_files(c: &mut Criterion) {
                 .arg(dir.path())
                 .output()
                 .expect("to execute rm");
+        })
+    });
+
+    let dir = n_files(black_box(500));
+    group.bench_function("rmt -rf", |b| {
+        b.iter(|| {
+            rmt.arg("-r")
+                .arg("-f")
+                .arg(dir.path())
+                .output()
+                .expect("to execute rmt");
         })
     });
 }
@@ -87,6 +103,7 @@ fn bench_dfs_n_nested_folders(c: &mut Criterion) {
     let mut group = c.benchmark_group("dfs n nested folders");
     let mut rmx = rmx();
     let mut rm = rm();
+    let mut rmt = rmt();
 
     let dir = n_nested_folder(black_box(100));
     group.bench_function("rmx -rf", |b| {
@@ -107,6 +124,17 @@ fn bench_dfs_n_nested_folders(c: &mut Criterion) {
                 .arg(dir.path())
                 .output()
                 .expect("to execute rm");
+        })
+    });
+
+    let dir = n_nested_folder(black_box(100));
+    group.bench_function("rmt -rf", |b| {
+        b.iter(|| {
+            rmt.arg("-r")
+                .arg("-f")
+                .arg(dir.path())
+                .output()
+                .expect("to execute rmt");
         })
     });
 }
@@ -115,6 +143,7 @@ fn bench_dfs_m_folders_n_nested_each(c: &mut Criterion) {
     let mut group = c.benchmark_group("dfs m nested folder n");
     let mut rmx = rmx();
     let mut rm = rm();
+    let mut rmt = rmt();
 
     let dir = m_nested_folder_n(black_box(20), black_box(100));
     group.bench_function("rmx -rf", |b| {
@@ -137,12 +166,24 @@ fn bench_dfs_m_folders_n_nested_each(c: &mut Criterion) {
                 .expect("to execute rm");
         })
     });
+
+    let dir = m_nested_folder_n(black_box(20), black_box(100));
+    group.bench_function("rmt -rf", |b| {
+        b.iter(|| {
+            rmt.arg("-r")
+                .arg("-f")
+                .arg(dir.path())
+                .output()
+                .expect("to execute rmt");
+        })
+    });
 }
 
 fn bench_rip_mode(c: &mut Criterion) {
     let mut group = c.benchmark_group("rip mode");
     let mut rmx = rmx();
     let mut rm = rm();
+    let mut rmt = rmt();
 
     let dir = m_nested_folder_n(black_box(20), black_box(100));
     group.bench_function("rmx --rip", |b| {
@@ -162,6 +203,17 @@ fn bench_rip_mode(c: &mut Criterion) {
                 .arg(dir.path())
                 .output()
                 .expect("to execute rm");
+        })
+    });
+
+    let dir = m_nested_folder_n(black_box(20), black_box(100));
+    group.bench_function("rmt -rf", |b| {
+        b.iter(|| {
+            rmt.arg("-r")
+                .arg("-f")
+                .arg(dir.path())
+                .output()
+                .expect("to execute rmt");
         })
     });
 }
