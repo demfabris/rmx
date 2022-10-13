@@ -50,7 +50,7 @@ _numbers obtained on a XPS 13 9300, at commit: `7929f6`_
 
 ### Standard GNU `rm` usage
 
-- `rmx --one-file-system -i *.txt` _handles more glob matching args, `rm` panics at ~10k+ matches`
+- `rmx --one-file-system -i *.txt` _handles more glob matching args, `rm` panics at ~10k+ matches`_
 - `rmx --preserve-root=/home --interactive=once /home/*/*`
 - `rmx --verbose -rf --no-preserve-root /`
 
@@ -60,9 +60,9 @@ Currently only obtainable via [crates.io](https://crates.io/crates/rmx) and this
 
 `cargo install rmx`
 
-*AUR* (soon)
+**AUR** (soon)
 
-*Prebuilt binaries* (soon)
+**Prebuilt binaries** (soon)
 
 ### Pro-tip:
 Put in your favorite Shell rc file:
