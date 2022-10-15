@@ -12,6 +12,7 @@ This project is a close port of GNU `rm`. The idea is extending the functionalit
 - [x] :penguin: Original GNU `rm` api
 - [x] :paperclip: System trash bin integration (`-t`)
 - [x] :zap: Blazingly fast
+- [x] :skull: Unrecoverable removal (`--shred`)
 - [ ] :mag_right: More filtering options
 - [ ] :smile: You tell me
 
@@ -47,6 +48,10 @@ _numbers obtained on a XPS 13 9300, at commit: `7929f6`_
 ### Follow symlinks (unix only)
 
 `rmx --follow-links link`
+
+### Wipe a file and make it unrecoverable
+
+`rmx --shred file`
 
 ### Standard GNU `rm` usage
 
