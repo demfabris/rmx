@@ -12,6 +12,7 @@ mod file;
 mod interact;
 mod link;
 mod traverse;
+mod shred;
 
 fn main() {
     if let Err(err) = run() {

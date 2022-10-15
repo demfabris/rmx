@@ -110,7 +110,14 @@ from that of the corresponding command line argument")
             .help("multithreaded force remove, intended for removing deeply nested directories; will not respect any other flags, use with caution")
             .long("rip")
             .short('x')
-            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once"])
+            .conflicts_with_all(&["dir", "recursive", "force", "WHEN", "interactive_always", "interactive_once", "trash", "shred"])
+        )
+        .arg(
+            Arg::new("shred")
+            .help("wipe a file from disk and try to make it unrecoverable; similar to GNU 'shred'. folders are skipped")
+            .long("shred")
+            // Shredding and sending to trash is nonsense
+            .conflicts_with_all(&["trash", "rip"])
         );
     }
 
@@ -143,6 +150,7 @@ pub struct RmOptions {
     pub follow_symlinks: bool,
     pub rip: bool,
     pub trash: bool,
+    pub shred: bool,
 }
 
 impl Default for RmOptions {
@@ -165,6 +173,7 @@ impl Default for RmOptions {
             follow_symlinks: false,
             rip: false,
             trash: false,
+            shred: false,
         }
     }
 }
@@ -216,6 +225,7 @@ impl From<&ArgMatches> for RmOptions {
             follow_symlinks: args.is_present("follow_links"),
             rip: args.is_present("rip"),
             trash: args.is_present("trash"),
+            shred: args.is_present("shred"),
         }
     }
 }

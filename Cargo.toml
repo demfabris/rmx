@@ -15,6 +15,8 @@ dialoguer = "0.10.2"
 thiserror = "1.0.37"
 jwalk = "0.6.0"
 trash = "2.1.5"
+rand = "0.8.5"
+zeroize = "1.5.7"
 
 [features]
 auto-interactive = []

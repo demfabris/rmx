@@ -6,6 +6,7 @@ use std::os::unix::fs::MetadataExt;
 
 use crate::arg::RmOptions;
 use crate::error::Error;
+use crate::shred;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -106,6 +107,8 @@ pub fn unlink_dir(
 pub fn unlink_file(path: &OsStr, name: &str, rel_root: &str, opt: &RmOptions) -> Result<()> {
     if opt.trash {
         trash::delete(path)?;
+    } else if opt.shred {
+        shred::shred(path)?;
     } else {
         fs::remove_file(path).map_err(|err| match err.kind() {
             io::ErrorKind::PermissionDenied => {
