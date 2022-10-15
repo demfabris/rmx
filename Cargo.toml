@@ -6,7 +6,7 @@ repository = "https://github.com/demfabris/rmx"
 license = "MIT OR Apache-2.0"
 description = "Faster GNU 'rm' drop in replacement with extra features"
 keywords = ["gnu", "remove", "trash"]
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 
 [dependencies]
