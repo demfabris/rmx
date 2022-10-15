@@ -77,3 +77,4 @@ Put in your favorite Shell rc file:
 
 1. Do not trust this tool for automation/production usage, this is not a 1:1 port of GNU `rm` and the underlying system calls are not the same.
 2. You may experience different performance results, overall `rmx` improves the computation load. I/O might still be your biggest bottleneck.
+3. Making the contents of a file unrecoverable is not a fully trusted operation nowadays.
