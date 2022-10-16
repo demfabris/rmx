@@ -1,0 +1,97 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_MIN_SRV: "stable"
+
+jobs:
+    
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ env.RUST_MIN_SRV }}
+        override: true
+        profile: minimal
+    - name: Rust version
+      run: rustc --version
+    - uses: actions-rs/cargo@v1
+      with:
+        command: check
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_MIN_SRV }}
+          override: true
+          profile: minimal
+      - name: Rust version
+        run: rustc --version
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_MIN_SRV }}
+          override: true
+          profile: minimal
+          components: rustfmt
+      - name: Rust version
+        run: rustc --version
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_MIN_SRV }}
+          override: true
+          profile: minimal
+          components: clippy
+      - name: Rust version
+        run: rustc --version
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+#          args: -- -D warnings
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ env.RUST_MIN_SRV }}
+        override: true
+        profile: minimal
+    - name: Rust version
+      run: rustc --version
+    - uses: actions-rs/cargo@v1
+      with:
+        command: build
