@@ -11,8 +11,8 @@ mod error;
 mod file;
 mod interact;
 mod link;
-mod traverse;
 mod shred;
+mod traverse;
 
 fn main() {
     if let Err(err) = run() {
