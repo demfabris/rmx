@@ -61,16 +61,24 @@ _numbers obtained on a XPS 13 9300, at commit: `7929f6`_
 
 ## Installation
 
-Currently only obtainable via [crates.io](https://crates.io/crates/rmx) and this repo.
+### Source
+
+From [crates.io](https://crates.io/crates/rmx)
 
 `cargo install rmx`
 
-**AUR** (soon)
+### Binaries
 
-**Prebuilt binaries** (soon)
+**AUR**: `yay rmx-bin`
+
+#### Prebuilt binaries
+
+Find all release targets [here](https://github.com/demfabris/rmx/releases)
+
+Latest linux-musl [binary](https://github.com/demfabris/rmx/blob/master/bin/rmx)
 
 ### Pro-tip:
-Put in your favorite Shell rc file:
+Put in your favorite shell rc file:
 `alias rm='rmx'`
 
 ## Disclaimer
