@@ -37,23 +37,23 @@ _numbers obtained on a XPS 13 9300, at commit: `7929f6`_
 
 ## Examples
 
-### Deleting deeply nested directory (blazingly fast)
+#### Deleting deeply nested directory (blazingly fast)
 
 `rmx --rip node_modules`
 
-### Sending files to system trash bin
+#### Sending files to system trash bin
 
 `rmx file1 file2 -t`
 
-### Follow symlinks (unix only)
+#### Follow symlinks (unix only)
 
 `rmx --follow-links link`
 
-### Wipe a file and make it unrecoverable
+#### Wipe a file and make it unrecoverable
 
 `rmx --shred file`
 
-### Standard GNU `rm` usage
+#### Standard GNU `rm` usage
 
 - `rmx --one-file-system -i *.txt` _handles more glob matching args, `rm` panics at ~10k+ matches`_
 - `rmx --preserve-root=/home --interactive=once /home/*/*`
