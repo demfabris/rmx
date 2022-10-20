@@ -1,0 +1,94 @@
+name: Release
+on:
+  push:
+    tags:
+      - '*.*.*'
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_MIN_SRV: "stable"
+
+jobs:
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_MIN_SRV }}
+          override: true
+          profile: minimal
+      - name: Build
+        run: |
+          # build x86_64
+          sudo apt-get -y install pkg-config libssl-dev
+          cargo build --release --target x86_64-unknown-linux-gnu
+          chmod +x target/x86_64-unknown-linux-gnu/release/rmx
+          tar -czf rmx-linux-x86_64.tar.gz target/x86_64-unknown-linux-gnu/release/rmx
+          # build arm
+          sudo apt-get install gcc-aarch64-linux-gnu musl-tools
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc
+          rustup target add x86_64-unknown-linux-musl
+          cargo build --release --target x86_64-unknown-linux-musl
+          chmod +x target/x86_64-unknown-linux-musl/release/rmx
+          tar -czf rmx-musl-x86_64.tar.gz target/x86_64-unknown-linux-musl/release/rmx
+      - name: Publish release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: rmx-*
+          draft: true
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-darwin:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_MIN_SRV }}
+          override: true
+          profile: minimal
+      - name: Build
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+          chmod +x target/x86_64-apple-darwin/release/rmx
+          tar -czf rmx-darwin-x86_64.tar.gz target/x86_64-apple-darwin/release/rmx
+          rustup target add aarch64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
+          chmod +x target/aarch64-apple-darwin/release/rmx
+          tar -czf rmx-darwin-arm64.tar.gz target/aarch64-apple-darwin/release/rmx
+      - name: Publish release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: rmx-*
+          draft: true
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-win:
+   runs-on: windows-latest
+   steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+         toolchain: ${{ env.RUST_MIN_SRV }}
+         override: true
+         profile: minimal
+      - name: Build
+        shell: powershell
+        run: |
+           cargo build --release --target x86_64-pc-windows-msvc
+           Compress-Archive -Path ".\target\x86_64-pc-windows-msvc\release\rmx.exe" -DestinationPath ".\rmx-win-x64.zip"
+      - name: Publish release
+        uses: softprops/action-gh-release@v1
+        with:
+           files: rmx-*
+           draft: true
+           body_path: CHANGELOG.md
+        env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
