@@ -17,12 +17,13 @@ jwalk = "0.6.0"
 trash = "2.1.5"
 rand = "0.8.5"
 zeroize = "1.5.7"
+crossbeam-channel = "0.5.6"
 
 [features]
 auto-interactive = []
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.134"
+libc = "0.2.135"
 
 [dev-dependencies]
 assert_fs = "1.0.7"
@@ -32,15 +33,15 @@ escargot = "0.5.7"
 criterion = "0.4.0"
 
 [profile.release]
-lto = true
+lto = "fat"
 codegen-units = 1
-opt-level = "s"
+opt-level = 3
 strip = true
 
 [profile.bench]
-lto = true
+lto = "fat"
 codegen-units = 1
-opt-level = "s"
+opt-level = 3
 strip = true
 
 [[bench]]

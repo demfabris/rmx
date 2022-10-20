@@ -85,6 +85,8 @@ pub fn unlink_dir(
     }
 
     if opt.trash {
+        trash::delete(path)?;
+    } else {
         fs::remove_dir(path).map_err(|err| match err.kind() {
             io::ErrorKind::PermissionDenied => {
                 let relative_name = concat_relative_root(rel_root, name);
@@ -92,8 +94,6 @@ pub fn unlink_dir(
             }
             _ => Error::Io(err),
         })?;
-    } else {
-        trash::delete(path)?;
     }
 
     if opt.verbose {

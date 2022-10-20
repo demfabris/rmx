@@ -2,11 +2,12 @@ use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::{Receiver, Sender};
 
 #[cfg(unix)]
 use std::ffi::CString;
+
+use crossbeam_channel::unbounded;
+use crossbeam_channel::{Receiver, Sender};
 
 use crate::arg::{InteractiveMode, RmOptions};
 use crate::core::{
@@ -109,14 +110,16 @@ pub fn dfs(
 #[allow(clippy::while_let_loop)]
 pub fn walk(path: &OsStr) -> Result<()> {
     let mut dirs: BTreeMap<usize, Vec<PathBuf>> = BTreeMap::new();
-    let (tx, rx): (Sender<PathBuf>, Receiver<PathBuf>) = channel();
+    let (tx, rx): (Sender<PathBuf>, Receiver<PathBuf>) = unbounded();
 
     let handle = std::thread::spawn(move || loop {
         match rx.recv() {
             Ok(path) => {
                 #[cfg(unix)]
                 {
-                    let c_path = CString::new(path.to_str().unwrap()).unwrap();
+                    let c_path = unsafe {
+                        CString::new(path.to_str().unwrap_unchecked()).unwrap_unchecked()
+                    };
                     unsafe { if libc::unlink(c_path.as_ptr()) == -1 {} };
                 }
 
@@ -137,17 +140,17 @@ pub fn walk(path: &OsStr) -> Result<()> {
             if path.is_dir() {
                 dirs.entry(depth).or_insert_with(Vec::new).push(path);
             } else {
-                tx.send(path).unwrap();
+                unsafe { tx.send(path).unwrap_unchecked() };
             }
         });
 
     drop(tx);
-    handle.join().unwrap();
+    unsafe { handle.join().unwrap_unchecked() };
 
     for (_, dir) in dirs.iter().rev() {
         #[cfg(unix)]
         for d in dir {
-            let c_path = CString::new(d.to_str().unwrap()).unwrap();
+            let c_path = unsafe { CString::new(d.to_str().unwrap_unchecked()).unwrap_unchecked() };
             unsafe { if libc::rmdir(c_path.as_ptr()) == -1 {} };
         }
 

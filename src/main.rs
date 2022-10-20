@@ -1,4 +1,5 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
 
 use crate::arg::{interact_level, rm_options, InteractiveMode, RmOptions};
 use crate::core::{Result, BIN_NAME};
