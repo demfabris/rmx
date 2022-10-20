@@ -14,7 +14,6 @@ This project is a close port of GNU `rm`. The idea is extending the functionalit
 - [x] :zap: Blazingly fast
 - [x] :skull: Unrecoverable removal (`--shred`)
 - [ ] :mag_right: More filtering options
-- [ ] :smile: You tell me
 
 ## Benchmarks
 
