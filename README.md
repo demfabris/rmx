@@ -22,18 +22,22 @@ Benches are defined [here](https://github.com/demfabris/rmx/blob/master/benches/
 
 ### Running
 
+To profile how `rmx` performs on your system:
+
 `cargo bench`
 
 ### Comparison
 
-| remove                     | rmx | rm | rmt |
-|----------------------------|-----|----|-------|
-| files                      |5.7739ms|14.121ms|7.2263ms|
-| recursively nested folders |5.7798ms|14.128ms|7.3677ms|
-| multiple deeply nested folders      |5.2066ms|14.669ms|7.2347ms|
-| multiple deeply nested folders (rip mode) |4.6359ms|14.160ms|7.5436ms|
+| remove                                    |   rmx  |  rm    |  rmt   |  rmd   |
+|-------------------------------------------|--------|--------|--------|--------|
+| files                                     |4.9297ms|19.991ms|10.003ms|9.2056ms|
+| recursively nested folders                |4.9784ms|20.122ms|10.135ms|9.3328ms|
+| multiple deeply nested folders            |4.8809ms|19.504ms|10.308ms|9.2406ms|
+| multiple deeply nested folders (rip mode) |4.2580ms| -      | -      | -      |
 
-_numbers obtained on a XPS 13 9300, at commit: `7929f6`_
+_numbers obtained on a Alienware M15 R6, at commit: `34e1e5a2`_
+
+`rmx` consistently scores better performance while offering the same API as GNU `rm`
 
 ## Examples
 
