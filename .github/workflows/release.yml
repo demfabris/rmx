@@ -26,7 +26,7 @@ jobs:
           cargo build --release --target x86_64-unknown-linux-gnu
           chmod +x target/x86_64-unknown-linux-gnu/release/rmx
           tar -czf rmx-linux-x86_64.tar.gz target/x86_64-unknown-linux-gnu/release/rmx
-          install aarch64 gnu linker
+          # build arm
           sudo apt-get install gcc-aarch64-linux-gnu musl-tools
           export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
           export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc
