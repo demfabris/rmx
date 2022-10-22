@@ -78,8 +78,6 @@ From [crates.io](https://crates.io/crates/rmx)
 
 Find all release targets [here](https://github.com/demfabris/rmx/releases)
 
-Latest linux-musl [binary](https://github.com/demfabris/rmx/blob/master/bin/rmx)
-
 ### Pro-tip:
 Put in your favorite shell rc file:
 `alias rm='rmx'`
